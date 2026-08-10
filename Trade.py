@@ -41,10 +41,6 @@ def market_value(player: Player) -> float:
     )
 
 
-def salary_cap_compliance(player: Player, salary_cap: float) -> bool:
-    return player.salary <= salary_cap
-
-
 def trade_fairness_score(value_a: float, value_b: float) -> float:
     if value_a == 0 and value_b == 0:
         return 100.0
@@ -63,7 +59,7 @@ def recommendation(player_a: Player, value_a: float, player_b: Player, value_b: 
     )
 
 
-def compare_trade(player_a: Player, player_b: Player, salary_cap: float) -> dict:
+def compare_trade(player_a: Player, player_b: Player) -> dict:
     value_a = market_value(player_a)
     value_b = market_value(player_b)
 
@@ -71,12 +67,10 @@ def compare_trade(player_a: Player, player_b: Player, salary_cap: float) -> dict
         "player_a": {
             "name": player_a.name,
             "market_value": round(value_a, 2),
-            "salary_cap_compliant": salary_cap_compliance(player_a, salary_cap),
         },
         "player_b": {
             "name": player_b.name,
             "market_value": round(value_b, 2),
-            "salary_cap_compliant": salary_cap_compliance(player_b, salary_cap),
         },
         "trade_fairness_score": round(trade_fairness_score(value_a, value_b), 2),
         "recommendation": recommendation(player_a, value_a, player_b, value_b),
@@ -114,18 +108,17 @@ def prompt_player(label: str) -> Player:
     print(f"\n--- {label} ---")
     name = input("Player name: ").strip() or label
     stats = prompt_stats()
-    salary = prompt_float("Salary: ")
+    salary = prompt_float("League salary: ")
     age = prompt_int("Age: ")
     contract_length = prompt_int("Contract length (years remaining): ")
     return Player(name=name, stats=stats, salary=salary, age=age, contract_length=contract_length)
 
 
 if __name__ == "__main__":
-    salary_cap = prompt_float("Enter your league's salary cap: ")
     player_a = prompt_player("Player A")
     player_b = prompt_player("Player B")
 
-    result = compare_trade(player_a, player_b, salary_cap)
+    result = compare_trade(player_a, player_b)
     print("\n--- Results ---")
     for key, value in result.items():
         print(f"{key}: {value}")
