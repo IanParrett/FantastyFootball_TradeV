@@ -1,0 +1,104 @@
+from dataclasses import dataclass, field
+from typing import Dict
+
+
+PEAK_AGE = 27
+DOLLAR_PER_PERFORMANCE_POINT = 150_000
+
+
+@dataclass
+class Player:
+    name: str
+    stats: Dict[str, float]
+    salary: float
+    age: int
+    contract_length: int
+
+
+def performance_score(player: Player) -> float:
+    if not player.stats:
+        return 0.0
+    return sum(player.stats.values()) / len(player.stats)
+
+
+def age_factor(player: Player) -> float:
+    # Value peaks at PEAK_AGE and decays 3% per year of distance from it.
+    distance = abs(player.age - PEAK_AGE)
+    return max(0.4, 1 - distance * 0.03)
+
+
+def contract_factor(player: Player) -> float:
+    # Longer remaining control adds trade value, capped at 5 years.
+    return 1 + min(player.contract_length, 5) * 0.05
+
+
+def market_value(player: Player) -> float:
+    return (
+        performance_score(player)
+        * age_factor(player)
+        * contract_factor(player)
+        * DOLLAR_PER_PERFORMANCE_POINT
+    )
+
+
+def salary_cap_compliance(player: Player, salary_cap: float) -> bool:
+    return player.salary <= salary_cap
+
+
+def trade_fairness_score(value_a: float, value_b: float) -> float:
+    if value_a == 0 and value_b == 0:
+        return 100.0
+    return (min(value_a, value_b) / max(value_a, value_b)) * 100
+
+
+def recommendation(player_a: Player, value_a: float, player_b: Player, value_b: float) -> str:
+    diff = value_a - value_b
+    threshold = 0.05 * max(value_a, value_b, 1)
+    if abs(diff) <= threshold:
+        return "Trade is balanced — neither side gains a significant advantage."
+    higher, lower = (player_a, player_b) if diff > 0 else (player_b, player_a)
+    return (
+        f"{higher.name} carries greater trade value than {lower.name} — "
+        f"the team acquiring {higher.name} benefits more from this trade."
+    )
+
+
+def compare_trade(player_a: Player, player_b: Player, salary_cap: float) -> dict:
+    value_a = market_value(player_a)
+    value_b = market_value(player_b)
+
+    return {
+        "player_a": {
+            "name": player_a.name,
+            "market_value": round(value_a, 2),
+            "salary_cap_compliant": salary_cap_compliance(player_a, salary_cap),
+        },
+        "player_b": {
+            "name": player_b.name,
+            "market_value": round(value_b, 2),
+            "salary_cap_compliant": salary_cap_compliance(player_b, salary_cap),
+        },
+        "trade_fairness_score": round(trade_fairness_score(value_a, value_b), 2),
+        "recommendation": recommendation(player_a, value_a, player_b, value_b),
+    }
+
+
+if __name__ == "__main__":
+    player_a = Player(
+        name="Player A",
+        stats={"yards": 85, "touchdowns": 78, "efficiency": 90},
+        salary=12_000_000,
+        age=26,
+        contract_length=3,
+    )
+    player_b = Player(
+        name="Player B",
+        stats={"yards": 70, "touchdowns": 65, "efficiency": 72},
+        salary=8_000_000,
+        age=30,
+        contract_length=1,
+    )
+
+    result = compare_trade(player_a, player_b, salary_cap=15_000_000)
+    for key, value in result.items():
+        print(f"{key}: {value}")
