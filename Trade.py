@@ -83,22 +83,49 @@ def compare_trade(player_a: Player, player_b: Player, salary_cap: float) -> dict
     }
 
 
-if __name__ == "__main__":
-    player_a = Player(
-        name="Player A",
-        stats={"yards": 85, "touchdowns": 78, "efficiency": 90},
-        salary=12_000_000,
-        age=26,
-        contract_length=3,
-    )
-    player_b = Player(
-        name="Player B",
-        stats={"yards": 70, "touchdowns": 65, "efficiency": 72},
-        salary=8_000_000,
-        age=30,
-        contract_length=1,
-    )
+def prompt_float(message: str) -> float:
+    while True:
+        try:
+            return float(input(message))
+        except ValueError:
+            print("Please enter a number.")
 
-    result = compare_trade(player_a, player_b, salary_cap=15_000_000)
+
+def prompt_int(message: str) -> int:
+    while True:
+        try:
+            return int(input(message))
+        except ValueError:
+            print("Please enter a whole number.")
+
+
+def prompt_stats() -> Dict[str, float]:
+    stats = {}
+    print("Enter stat name and value (leave stat name blank to finish):")
+    while True:
+        stat_name = input("  Stat name: ").strip()
+        if not stat_name:
+            break
+        stats[stat_name] = prompt_float(f"  {stat_name} value: ")
+    return stats
+
+
+def prompt_player(label: str) -> Player:
+    print(f"\n--- {label} ---")
+    name = input("Player name: ").strip() or label
+    stats = prompt_stats()
+    salary = prompt_float("Salary: ")
+    age = prompt_int("Age: ")
+    contract_length = prompt_int("Contract length (years remaining): ")
+    return Player(name=name, stats=stats, salary=salary, age=age, contract_length=contract_length)
+
+
+if __name__ == "__main__":
+    salary_cap = prompt_float("Enter your league's salary cap: ")
+    player_a = prompt_player("Player A")
+    player_b = prompt_player("Player B")
+
+    result = compare_trade(player_a, player_b, salary_cap)
+    print("\n--- Results ---")
     for key, value in result.items():
         print(f"{key}: {value}")
