@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict
+from typing import Dict, Optional
 
 
 PEAK_AGE = 27
@@ -10,9 +10,9 @@ DOLLAR_PER_PERFORMANCE_POINT = 150_000
 class Player:
     name: str
     stats: Dict[str, float]
-    salary: float
     age: int
     contract_length: int
+    salary: Optional[float] = None
 
 
 def performance_score(player: Player) -> float:
@@ -63,7 +63,7 @@ def compare_trade(player_a: Player, player_b: Player) -> dict:
     value_a = market_value(player_a)
     value_b = market_value(player_b)
 
-    return {
+    result = {
         "player_a": {
             "name": player_a.name,
             "market_value": round(value_a, 2),
@@ -75,6 +75,11 @@ def compare_trade(player_a: Player, player_b: Player) -> dict:
         "trade_fairness_score": round(trade_fairness_score(value_a, value_b), 2),
         "recommendation": recommendation(player_a, value_a, player_b, value_b),
     }
+    if player_a.salary is not None:
+        result["player_a"]["salary"] = player_a.salary
+    if player_b.salary is not None:
+        result["player_b"]["salary"] = player_b.salary
+    return result
 
 
 def prompt_float(message: str) -> float:
@@ -104,19 +109,30 @@ def prompt_stats() -> Dict[str, float]:
     return stats
 
 
-def prompt_player(label: str) -> Player:
+def prompt_player(label: str, is_salary_league: bool) -> Player:
     print(f"\n--- {label} ---")
     name = input("Player name: ").strip() or label
     stats = prompt_stats()
-    salary = prompt_float("League salary: ")
+    salary = prompt_float("League salary: ") if is_salary_league else None
     age = prompt_int("Age: ")
     contract_length = prompt_int("Contract length (years remaining): ")
     return Player(name=name, stats=stats, salary=salary, age=age, contract_length=contract_length)
 
 
+def prompt_yes_no(message: str) -> bool:
+    while True:
+        answer = input(message).strip().lower()
+        if answer in ("y", "yes"):
+            return True
+        if answer in ("n", "no"):
+            return False
+        print("Please enter y or n.")
+
+
 if __name__ == "__main__":
-    player_a = prompt_player("Player A")
-    player_b = prompt_player("Player B")
+    is_salary_league = prompt_yes_no("Is this a salary-cap league? (y/n): ")
+    player_a = prompt_player("Player A", is_salary_league)
+    player_b = prompt_player("Player B", is_salary_league)
 
     result = compare_trade(player_a, player_b)
     print("\n--- Results ---")
