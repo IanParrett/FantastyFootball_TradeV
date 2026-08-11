@@ -155,6 +155,11 @@ function renderResults(result) {
             ? `<dt>% of Cap</dt><dd>${result[side].cap_percentage}%</dd>`
             : ""
         }
+        ${
+          showSalary && result[side].value_per_cap_percent != null
+            ? `<dt>Value per 1% Cap</dt><dd>${formatMoney(result[side].value_per_cap_percent)}</dd>`
+            : ""
+        }
         ${showSalary ? `<dt>Final value</dt><dd>${formatMoney(result[side].final_value)}</dd>` : ""}
       </dl>
     </div>

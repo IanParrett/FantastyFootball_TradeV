@@ -101,8 +101,12 @@ def compare_trade(player_a: Player, player_b: Player, salary_cap: Optional[float
         result["player_b"]["salary"] = player_b.salary
     if cap_pct_a is not None:
         result["player_a"]["cap_percentage"] = round(cap_pct_a, 2)
+        if cap_pct_a > 0:
+            result["player_a"]["value_per_cap_percent"] = round(market_a / cap_pct_a, 2)
     if cap_pct_b is not None:
         result["player_b"]["cap_percentage"] = round(cap_pct_b, 2)
+        if cap_pct_b > 0:
+            result["player_b"]["value_per_cap_percent"] = round(market_b / cap_pct_b, 2)
     return result
 
 
