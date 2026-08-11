@@ -4,6 +4,7 @@ from typing import Dict, List, Optional
 
 PEAK_AGE = 27
 DOLLAR_PER_PERFORMANCE_POINT = 200_000
+DOLLAR_PER_FANTASYCALC_POINT = 5_000
 
 # Points per unit for standard fantasy scoring, keyed by the friendly stat
 # labels sleeper.py assigns. "Receptions" is handled separately since its
@@ -45,6 +46,13 @@ class Player:
     contract_length: int
     salary: Optional[float] = None
     position: Optional[str] = None
+    sleeper_id: Optional[str] = None
+
+
+def _te_premium_bonus_points(player: Player, settings: LeagueSettings) -> float:
+    if not (settings.te_premium and player.position == "TE"):
+        return 0.0
+    return player.stats.get("Receptions", 0.0) * settings.te_premium_bonus
 
 
 def performance_score(player: Player, settings: LeagueSettings) -> float:
@@ -54,10 +62,9 @@ def performance_score(player: Player, settings: LeagueSettings) -> float:
     for label, value in player.stats.items():
         if label == "Receptions":
             total += value * settings.ppr
-            if settings.te_premium and player.position == "TE":
-                total += value * settings.te_premium_bonus
             continue
         total += value * STAT_POINTS.get(label, 0.0)
+    total += _te_premium_bonus_points(player, settings)
     return total
 
 
@@ -72,7 +79,22 @@ def contract_factor(player: Player) -> float:
     return 1 + min(player.contract_length, 5) * 0.05
 
 
-def market_value(player: Player, settings: LeagueSettings) -> float:
+def market_value(
+    player: Player, settings: LeagueSettings, fc_values: Optional[Dict[str, float]] = None
+) -> float:
+    fc_value = fc_values.get(player.sleeper_id) if fc_values and player.sleeper_id else None
+    if fc_value is not None:
+        # Real crowd-sourced value from FantasyCalc, fetched for this exact
+        # league format/PPR/superflex combo - already accounts for all of
+        # that. TE Premium isn't something FantasyCalc tracks, so it's
+        # layered on top as our own bonus regardless of value source.
+        value = fc_value * DOLLAR_PER_FANTASYCALC_POINT
+        value += _te_premium_bonus_points(player, settings) * DOLLAR_PER_PERFORMANCE_POINT
+        return value
+
+    # Fallback formula for players FantasyCalc doesn't rank (K, DEF, deep
+    # bench, etc.) - superflex/TE premium have to be applied by hand here
+    # since there's no crowd data already accounting for them.
     value = (
         performance_score(player, settings)
         * age_factor(player)
@@ -80,13 +102,17 @@ def market_value(player: Player, settings: LeagueSettings) -> float:
         * DOLLAR_PER_PERFORMANCE_POINT
     )
     if settings.superflex and player.position == "QB":
-        # A 2nd startable QB slot makes every QB significantly scarcer.
         value *= settings.superflex_qb_multiplier
     return value
 
 
-def final_value(player: Player, settings: LeagueSettings, cap_percentage: Optional[float] = None) -> float:
-    value = market_value(player, settings)
+def final_value(
+    player: Player,
+    settings: LeagueSettings,
+    fc_values: Optional[Dict[str, float]] = None,
+    cap_percentage: Optional[float] = None,
+) -> float:
+    value = market_value(player, settings, fc_values)
     if cap_percentage is not None:
         # A player eating a bigger slice of the cap surrenders that much
         # of their market value back as trade cost.
@@ -128,20 +154,23 @@ def recommendation(label_a: str, value_a: float, label_b: str, value_b: float) -
 
 
 def _team_breakdown(
-    players: List[Player], settings: LeagueSettings, salary_cap: Optional[float] = None
+    players: List[Player],
+    settings: LeagueSettings,
+    fc_values: Optional[Dict[str, float]] = None,
+    salary_cap: Optional[float] = None,
 ) -> dict:
     player_details = []
     total_market = 0.0
     total_final = 0.0
 
     for player in players:
-        market = market_value(player, settings)
+        market = market_value(player, settings, fc_values)
         cap_pct = (
             player.salary / salary_cap * 100
             if salary_cap and player.salary is not None
             else None
         )
-        final = final_value(player, settings, cap_pct)
+        final = final_value(player, settings, fc_values, cap_pct)
         total_market += market
         total_final += final
 
@@ -149,6 +178,9 @@ def _team_breakdown(
             "name": player.name,
             "market_value": round(market, 2),
             "final_value": round(final, 2),
+            "value_source": "fantasycalc"
+            if fc_values and player.sleeper_id in fc_values
+            else "formula",
         }
         if player.salary is not None:
             detail["salary"] = player.salary
@@ -169,11 +201,12 @@ def compare_trade(
     team_a: List[Player],
     team_b: List[Player],
     settings: Optional[LeagueSettings] = None,
+    fc_values: Optional[Dict[str, float]] = None,
     salary_cap: Optional[float] = None,
 ) -> dict:
     settings = settings or LeagueSettings()
-    side_a = _team_breakdown(team_a, settings, salary_cap)
-    side_b = _team_breakdown(team_b, settings, salary_cap)
+    side_a = _team_breakdown(team_a, settings, fc_values, salary_cap)
+    side_b = _team_breakdown(team_b, settings, fc_values, salary_cap)
     final_a = side_a["total_final_value"]
     final_b = side_b["total_final_value"]
     share_a, share_b = value_share(final_a, final_b)

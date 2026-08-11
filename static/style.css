@@ -411,6 +411,27 @@ body {
   font-weight: 600;
 }
 
+.value-source-tag {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.value-source-fantasycalc {
+  background: #e3f4e8;
+  color: #1e7a3d;
+}
+
+.value-source-formula {
+  background: #f1eadd;
+  color: #8a6d1f;
+}
+
 .player-result-detail {
   margin-top: 4px;
   display: flex;

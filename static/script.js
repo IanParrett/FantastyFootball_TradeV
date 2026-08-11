@@ -80,6 +80,7 @@ function wirePlayerSearch(slot) {
       slot.querySelector('input[name="age"]').value = detail.age;
     }
     slot.querySelector('input[name="position"]').value = detail.position || "";
+    slot.querySelector('input[name="sleeper_id"]').value = detail.id || "";
     setPlayerStats(slot, detail.stats || {});
   });
 
@@ -156,6 +157,7 @@ function collectPlayer(slot) {
     name: slot.querySelector('input[name="name"]').value,
     age: slot.querySelector('input[name="age"]').value,
     position: slot.querySelector('input[name="position"]').value,
+    sleeper_id: slot.querySelector('input[name="sleeper_id"]').value,
     contract_length: slot.querySelector('input[name="contract_length"]').value,
     salary: salaryToggle.checked ? slot.querySelector('input[name="salary"]').value : null,
     stats: getPlayerStats(slot),
@@ -173,12 +175,14 @@ function formatMoney(value) {
 }
 
 function playerRowHtml(p, showSalary) {
+  const sourceLabel = p.value_source === "fantasycalc" ? "FantasyCalc" : "estimated";
   return `
     <div class="player-result">
       <div class="player-result-header">
         <span class="player-result-name">${p.name}</span>
         <span class="player-result-value">${formatMoney(p.market_value)}</span>
       </div>
+      <span class="value-source-tag value-source-${p.value_source}">${sourceLabel}</span>
       ${
         showSalary
           ? `<div class="player-result-detail">
@@ -254,6 +258,7 @@ form.addEventListener("submit", async (event) => {
     team_a: collectTeam(form.querySelector('[data-side="team_a"]')),
     team_b: collectTeam(form.querySelector('[data-side="team_b"]')),
     salary_cap: salaryToggle.checked ? salaryCapInput.value : null,
+    league_format: document.querySelector('input[name="league-format"]:checked').value,
     scoring_format: document.querySelector('input[name="scoring-format"]:checked').value,
     te_premium: tePremiumToggle.checked,
     superflex: superflexToggle.checked,
