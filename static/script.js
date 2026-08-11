@@ -196,7 +196,10 @@ function playerRowHtml(p, showSalary) {
 function teamCardHtml(team, label, showSalary) {
   return `
     <div class="results-card">
-      <h4>${label}</h4>
+      <div class="results-card-header">
+        <h4>${label}</h4>
+        <span class="value-share-badge">${team.value_share}%</span>
+      </div>
       <div class="team-total">
         <span>Total market value</span><strong>${formatMoney(team.total_market_value)}</strong>
       </div>
@@ -212,11 +215,27 @@ function teamCardHtml(team, label, showSalary) {
   `;
 }
 
+function splitBarHtml(result) {
+  const a = result.team_a.value_share;
+  const b = result.team_b.value_share;
+  return `
+    <div class="split-bar">
+      <div class="split-bar-fill split-bar-a" style="width: ${a}%">${a >= 12 ? `${a}%` : ""}</div>
+      <div class="split-bar-fill split-bar-b" style="width: ${b}%">${b >= 12 ? `${b}%` : ""}</div>
+    </div>
+    <div class="split-bar-labels">
+      <span>Team One</span>
+      <span>Team Two</span>
+    </div>
+  `;
+}
+
 function renderResults(result) {
   const showSalary = salaryToggle.checked;
 
   resultsSection.innerHTML = `
     <h3>Results</h3>
+    ${splitBarHtml(result)}
     <div class="results-grid">
       ${teamCardHtml(result.team_a, "Team One", showSalary)}
       ${teamCardHtml(result.team_b, "Team Two", showSalary)}

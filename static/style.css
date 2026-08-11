@@ -309,6 +309,40 @@ body {
   margin-top: 0;
 }
 
+.split-bar {
+  display: flex;
+  height: 28px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.split-bar-fill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  transition: width 0.2s ease;
+}
+
+.split-bar-a {
+  background: #2f2f33;
+}
+
+.split-bar-b {
+  background: #f5821f;
+}
+
+.split-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: #777;
+  margin-bottom: 24px;
+}
+
 .results-grid {
   display: flex;
   gap: 24px;
@@ -322,8 +356,28 @@ body {
   padding: 18px 20px;
 }
 
-.results-card h4 {
-  margin: 0 0 12px;
+.results-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.results-card-header h4 {
+  margin: 0;
+}
+
+.value-share-badge {
+  background: #2f2f33;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.results-card:nth-child(2) .value-share-badge {
+  background: #f5821f;
 }
 
 .team-total {

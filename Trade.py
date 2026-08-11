@@ -104,6 +104,17 @@ def trade_fairness_score(value_a: float, value_b: float) -> float:
     return max(0.0, fairness)
 
 
+def value_share(value_a: float, value_b: float) -> tuple:
+    # Negative final value contributes no share (a side that's underwater
+    # on cap cost doesn't get credit for it).
+    a, b = max(value_a, 0.0), max(value_b, 0.0)
+    total = a + b
+    if total == 0:
+        return 50.0, 50.0
+    share_a = a / total * 100
+    return round(share_a, 2), round(100 - share_a, 2)
+
+
 def recommendation(label_a: str, value_a: float, label_b: str, value_b: float) -> str:
     diff = value_a - value_b
     threshold = 0.05 * max(value_a, value_b, 1)
@@ -165,6 +176,9 @@ def compare_trade(
     side_b = _team_breakdown(team_b, settings, salary_cap)
     final_a = side_a["total_final_value"]
     final_b = side_b["total_final_value"]
+    share_a, share_b = value_share(final_a, final_b)
+    side_a["value_share"] = share_a
+    side_b["value_share"] = share_b
 
     return {
         "team_a": side_a,
