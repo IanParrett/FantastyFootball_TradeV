@@ -13,35 +13,60 @@ FANTASY_POSITIONS = {"QB", "RB", "WR", "TE", "K", "DEF"}
 # should be shown as stat rows.
 STAT_FIELDS = {
     "QB": [
+        ("pass_cmp", "Completions"),
+        ("pass_att", "Pass Attempts"),
         ("pass_yd", "Passing Yards"),
         ("pass_td", "Passing TDs"),
         ("pass_int", "Interceptions"),
+        ("pass_sack", "Times Sacked"),
+        ("rush_att", "Rush Attempts"),
         ("rush_yd", "Rushing Yards"),
         ("rush_td", "Rushing TDs"),
+        ("fum_lost", "Fumbles Lost"),
     ],
     "RB": [
+        ("rush_att", "Rush Attempts"),
         ("rush_yd", "Rushing Yards"),
         ("rush_td", "Rushing TDs"),
+        ("rec_tgt", "Targets"),
         ("rec", "Receptions"),
         ("rec_yd", "Receiving Yards"),
         ("rec_td", "Receiving TDs"),
+        ("fum_lost", "Fumbles Lost"),
     ],
     "WR": [
+        ("rec_tgt", "Targets"),
         ("rec", "Receptions"),
         ("rec_yd", "Receiving Yards"),
         ("rec_td", "Receiving TDs"),
+        ("rush_att", "Rush Attempts"),
         ("rush_yd", "Rushing Yards"),
         ("rush_td", "Rushing TDs"),
+        ("fum_lost", "Fumbles Lost"),
     ],
     "TE": [
+        ("rec_tgt", "Targets"),
         ("rec", "Receptions"),
         ("rec_yd", "Receiving Yards"),
         ("rec_td", "Receiving TDs"),
+        ("fum_lost", "Fumbles Lost"),
     ],
     "K": [
         ("fgm", "Field Goals Made"),
         ("fga", "Field Goals Attempted"),
+        ("fgm_lng", "Longest Field Goal"),
         ("xpm", "Extra Points Made"),
+        ("xpa", "Extra Point Attempts"),
+    ],
+    "DEF": [
+        ("sack", "Sacks"),
+        ("int", "Interceptions"),
+        ("fum_rec", "Fumble Recoveries"),
+        ("ff", "Forced Fumbles"),
+        ("def_td", "Defensive TDs"),
+        ("blk_kick", "Blocked Kicks"),
+        ("pts_allow", "Points Allowed"),
+        ("yds_allow", "Yards Allowed"),
     ],
 }
 
@@ -79,31 +104,41 @@ def _age_from_birth_date(birth_date: str):
     return age
 
 
+def _display_name(player: dict):
+    if player.get("full_name"):
+        return player["full_name"]
+    first, last = player.get("first_name"), player.get("last_name")
+    if first or last:
+        return " ".join(part for part in (first, last) if part)
+    return None
+
+
 def search_players(query: str, limit: int = 15) -> list:
     query = query.strip().lower()
     if not query:
         return []
 
     players = _get_players()
-    matches = [
-        p
-        for p in players.values()
-        if p.get("position") in FANTASY_POSITIONS
-        and p.get("full_name")
-        and query in p["full_name"].lower()
-    ]
-    matches.sort(key=lambda p: p.get("search_rank") or 999999)
+    matches = []
+    for p in players.values():
+        if p.get("position") not in FANTASY_POSITIONS:
+            continue
+        name = _display_name(p)
+        if name and query in name.lower():
+            matches.append((p, name))
+
+    matches.sort(key=lambda pair: pair[0].get("search_rank") or 999999)
     matches = matches[:limit]
 
     return [
         {
             "id": p["player_id"],
-            "name": p["full_name"],
+            "name": name,
             "position": p.get("position"),
             "team": p.get("team"),
             "age": _age_from_birth_date(p.get("birth_date")),
         }
-        for p in matches
+        for p, name in matches
     ]
 
 
@@ -123,7 +158,7 @@ def get_player_detail(player_id: str, season: int = DEFAULT_SEASON) -> dict:
 
     return {
         "id": player_id,
-        "name": player.get("full_name"),
+        "name": _display_name(player),
         "position": player.get("position"),
         "team": player.get("team"),
         "age": _age_from_birth_date(player.get("birth_date")),
