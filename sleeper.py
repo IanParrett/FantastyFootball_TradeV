@@ -17,7 +17,7 @@ STAT_FIELDS = {
         ("pass_att", "Pass Attempts"),
         ("pass_yd", "Passing Yards"),
         ("pass_td", "Passing TDs"),
-        ("pass_int", "Interceptions"),
+        ("pass_int", "Interceptions Thrown"),
         ("pass_sack", "Times Sacked"),
         ("rush_att", "Rush Attempts"),
         ("rush_yd", "Rushing Yards"),

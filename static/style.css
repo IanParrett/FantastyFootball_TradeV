@@ -49,6 +49,27 @@ body {
   gap: 6px;
 }
 
+.scoring-format-toggle,
+.misc-format-toggle {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.scoring-format-toggle .field-label {
+  margin: 0;
+  font-weight: 600;
+}
+
+.scoring-format-toggle label,
+.misc-format-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .salary-toggle {
   display: flex;
   justify-content: center;

@@ -7,6 +7,8 @@ const resultsSection = document.getElementById("results");
 const playerSlotTemplate = document.getElementById("player-slot-template");
 const salaryCapField = document.querySelector(".salary-cap-field");
 const salaryCapInput = document.getElementById("salary-cap-input");
+const tePremiumToggle = document.getElementById("te-premium-toggle");
+const superflexToggle = document.getElementById("superflex-toggle");
 
 function isDynasty() {
   return document.querySelector('input[name="league-format"]:checked').value === "dynasty";
@@ -77,6 +79,7 @@ function wirePlayerSearch(slot) {
     if (detail.age != null) {
       slot.querySelector('input[name="age"]').value = detail.age;
     }
+    slot.querySelector('input[name="position"]').value = detail.position || "";
     setPlayerStats(slot, detail.stats || {});
   });
 
@@ -152,6 +155,7 @@ function collectPlayer(slot) {
   return {
     name: slot.querySelector('input[name="name"]').value,
     age: slot.querySelector('input[name="age"]').value,
+    position: slot.querySelector('input[name="position"]').value,
     contract_length: slot.querySelector('input[name="contract_length"]').value,
     salary: salaryToggle.checked ? slot.querySelector('input[name="salary"]').value : null,
     stats: getPlayerStats(slot),
@@ -231,6 +235,9 @@ form.addEventListener("submit", async (event) => {
     team_a: collectTeam(form.querySelector('[data-side="team_a"]')),
     team_b: collectTeam(form.querySelector('[data-side="team_b"]')),
     salary_cap: salaryToggle.checked ? salaryCapInput.value : null,
+    scoring_format: document.querySelector('input[name="scoring-format"]:checked').value,
+    te_premium: tePremiumToggle.checked,
+    superflex: superflexToggle.checked,
   };
 
   try {

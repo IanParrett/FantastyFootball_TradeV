@@ -22,6 +22,31 @@
           Dynasty / Keeper (multi-year)
         </label>
       </div>
+      <div class="scoring-format-toggle">
+        <span class="field-label">Scoring Format</span>
+        <label>
+          <input type="radio" name="scoring-format" value="standard" />
+          Standard
+        </label>
+        <label>
+          <input type="radio" name="scoring-format" value="half_ppr" checked />
+          Half-PPR
+        </label>
+        <label>
+          <input type="radio" name="scoring-format" value="full_ppr" />
+          Full PPR
+        </label>
+      </div>
+      <div class="misc-format-toggle">
+        <label>
+          <input type="checkbox" id="te-premium-toggle" />
+          TE Premium
+        </label>
+        <label>
+          <input type="checkbox" id="superflex-toggle" />
+          Superflex / 2QB
+        </label>
+      </div>
       <label class="salary-toggle">
         <input type="checkbox" id="salary-league-toggle" />
         This is a salary-cap league
@@ -62,6 +87,7 @@
         <ul class="player-suggestions hidden"></ul>
       </label>
       <input type="hidden" name="age" value="" />
+      <input type="hidden" name="position" value="" />
       <label class="field contract-field hidden">
         <span class="field-label">Contract (yrs)</span>
         <input type="number" name="contract_length" min="0" value="0" />

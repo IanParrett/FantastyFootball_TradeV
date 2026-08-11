@@ -19,11 +19,22 @@ def _build_player(data: dict) -> Trade.Player:
         age=int(data.get("age") or 0),
         contract_length=int(data.get("contract_length") or 0),
         salary=float(salary) if salary not in (None, "") else None,
+        position=data.get("position") or None,
     )
 
 
 def _build_team(players_data: list) -> list:
     return [_build_player(p) for p in players_data if p.get("name")]
+
+
+def _build_settings(data: dict) -> Trade.LeagueSettings:
+    scoring = data.get("scoring_format", "half_ppr")
+    ppr = {"standard": 0.0, "half_ppr": 0.5, "full_ppr": 1.0}.get(scoring, 0.5)
+    return Trade.LeagueSettings(
+        ppr=ppr,
+        te_premium=bool(data.get("te_premium")),
+        superflex=bool(data.get("superflex")),
+    )
 
 
 @app.route("/")
@@ -36,9 +47,10 @@ def api_compare():
     data = request.get_json(force=True)
     team_a = _build_team(data.get("team_a", []))
     team_b = _build_team(data.get("team_b", []))
+    settings = _build_settings(data)
     salary_cap = data.get("salary_cap")
     salary_cap = float(salary_cap) if salary_cap not in (None, "") else None
-    return jsonify(Trade.compare_trade(team_a, team_b, salary_cap))
+    return jsonify(Trade.compare_trade(team_a, team_b, settings, salary_cap))
 
 
 @app.route("/api/players/search")

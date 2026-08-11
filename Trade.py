@@ -3,7 +3,38 @@ from typing import Dict, List, Optional
 
 
 PEAK_AGE = 27
-DOLLAR_PER_PERFORMANCE_POINT = 150_000
+DOLLAR_PER_PERFORMANCE_POINT = 200_000
+
+# Points per unit for standard fantasy scoring, keyed by the friendly stat
+# labels sleeper.py assigns. "Receptions" is handled separately since its
+# value depends on the league's PPR setting.
+STAT_POINTS = {
+    "Passing Yards": 0.04,
+    "Passing TDs": 4,
+    "Interceptions Thrown": -2,
+    "Rushing Yards": 0.1,
+    "Rushing TDs": 6,
+    "Fumbles Lost": -2,
+    "Receiving Yards": 0.1,
+    "Receiving TDs": 6,
+    "Field Goals Made": 3,
+    "Extra Points Made": 1,
+    "Sacks": 1,
+    "Interceptions": 2,
+    "Fumble Recoveries": 2,
+    "Forced Fumbles": 1,
+    "Defensive TDs": 6,
+    "Blocked Kicks": 2,
+}
+
+
+@dataclass
+class LeagueSettings:
+    ppr: float = 0.5  # points per reception: 0 = standard, 0.5 = half, 1 = full
+    te_premium: bool = False
+    te_premium_bonus: float = 0.5  # extra points per TE reception on top of ppr
+    superflex: bool = False
+    superflex_qb_multiplier: float = 1.4
 
 
 @dataclass
@@ -13,12 +44,21 @@ class Player:
     age: int
     contract_length: int
     salary: Optional[float] = None
+    position: Optional[str] = None
 
 
-def performance_score(player: Player) -> float:
+def performance_score(player: Player, settings: LeagueSettings) -> float:
     if not player.stats:
         return 0.0
-    return sum(player.stats.values()) / len(player.stats)
+    total = 0.0
+    for label, value in player.stats.items():
+        if label == "Receptions":
+            total += value * settings.ppr
+            if settings.te_premium and player.position == "TE":
+                total += value * settings.te_premium_bonus
+            continue
+        total += value * STAT_POINTS.get(label, 0.0)
+    return total
 
 
 def age_factor(player: Player) -> float:
@@ -32,17 +72,21 @@ def contract_factor(player: Player) -> float:
     return 1 + min(player.contract_length, 5) * 0.05
 
 
-def market_value(player: Player) -> float:
-    return (
-        performance_score(player)
+def market_value(player: Player, settings: LeagueSettings) -> float:
+    value = (
+        performance_score(player, settings)
         * age_factor(player)
         * contract_factor(player)
         * DOLLAR_PER_PERFORMANCE_POINT
     )
+    if settings.superflex and player.position == "QB":
+        # A 2nd startable QB slot makes every QB significantly scarcer.
+        value *= settings.superflex_qb_multiplier
+    return value
 
 
-def final_value(player: Player, cap_percentage: Optional[float] = None) -> float:
-    value = market_value(player)
+def final_value(player: Player, settings: LeagueSettings, cap_percentage: Optional[float] = None) -> float:
+    value = market_value(player, settings)
     if cap_percentage is not None:
         # A player eating a bigger slice of the cap surrenders that much
         # of their market value back as trade cost.
@@ -72,19 +116,21 @@ def recommendation(label_a: str, value_a: float, label_b: str, value_b: float) -
     )
 
 
-def _team_breakdown(players: List[Player], salary_cap: Optional[float] = None) -> dict:
+def _team_breakdown(
+    players: List[Player], settings: LeagueSettings, salary_cap: Optional[float] = None
+) -> dict:
     player_details = []
     total_market = 0.0
     total_final = 0.0
 
     for player in players:
-        market = market_value(player)
+        market = market_value(player, settings)
         cap_pct = (
             player.salary / salary_cap * 100
             if salary_cap and player.salary is not None
             else None
         )
-        final = final_value(player, cap_pct)
+        final = final_value(player, settings, cap_pct)
         total_market += market
         total_final += final
 
@@ -109,10 +155,14 @@ def _team_breakdown(players: List[Player], salary_cap: Optional[float] = None) -
 
 
 def compare_trade(
-    team_a: List[Player], team_b: List[Player], salary_cap: Optional[float] = None
+    team_a: List[Player],
+    team_b: List[Player],
+    settings: Optional[LeagueSettings] = None,
+    salary_cap: Optional[float] = None,
 ) -> dict:
-    side_a = _team_breakdown(team_a, salary_cap)
-    side_b = _team_breakdown(team_b, salary_cap)
+    settings = settings or LeagueSettings()
+    side_a = _team_breakdown(team_a, settings, salary_cap)
+    side_b = _team_breakdown(team_b, settings, salary_cap)
     final_a = side_a["total_final_value"]
     final_b = side_b["total_final_value"]
 
@@ -176,7 +226,9 @@ if __name__ == "__main__":
     player_a = prompt_player("Player A", is_salary_league)
     player_b = prompt_player("Player B", is_salary_league)
 
-    result = compare_trade([player_a], [player_b])
+    settings = LeagueSettings(superflex=prompt_yes_no("Is this a superflex/2QB league? (y/n): "))
+
+    result = compare_trade([player_a], [player_b], settings)
     print("\n--- Results ---")
     for key, value in result.items():
         print(f"{key}: {value}")
