@@ -41,10 +41,19 @@ def market_value(player: Player) -> float:
     )
 
 
+def final_value(player: Player) -> float:
+    value = market_value(player)
+    if player.salary is not None:
+        return value - player.salary
+    return value
+
+
 def trade_fairness_score(value_a: float, value_b: float) -> float:
-    if value_a == 0 and value_b == 0:
-        return 100.0
-    return (min(value_a, value_b) / max(value_a, value_b)) * 100
+    # Magnitude-based so it stays sane even when a value goes negative
+    # (a player's salary can outweigh their market value).
+    scale = max(abs(value_a), abs(value_b), 1)
+    fairness = 100 - (abs(value_a - value_b) / scale) * 100
+    return max(0.0, fairness)
 
 
 def recommendation(player_a: Player, value_a: float, player_b: Player, value_b: float) -> str:
@@ -60,20 +69,24 @@ def recommendation(player_a: Player, value_a: float, player_b: Player, value_b: 
 
 
 def compare_trade(player_a: Player, player_b: Player) -> dict:
-    value_a = market_value(player_a)
-    value_b = market_value(player_b)
+    market_a = market_value(player_a)
+    market_b = market_value(player_b)
+    final_a = final_value(player_a)
+    final_b = final_value(player_b)
 
     result = {
         "player_a": {
             "name": player_a.name,
-            "market_value": round(value_a, 2),
+            "market_value": round(market_a, 2),
+            "final_value": round(final_a, 2),
         },
         "player_b": {
             "name": player_b.name,
-            "market_value": round(value_b, 2),
+            "market_value": round(market_b, 2),
+            "final_value": round(final_b, 2),
         },
-        "trade_fairness_score": round(trade_fairness_score(value_a, value_b), 2),
-        "recommendation": recommendation(player_a, value_a, player_b, value_b),
+        "trade_fairness_score": round(trade_fairness_score(final_a, final_b), 2),
+        "recommendation": recommendation(player_a, final_a, player_b, final_b),
     }
     if player_a.salary is not None:
         result["player_a"]["salary"] = player_a.salary

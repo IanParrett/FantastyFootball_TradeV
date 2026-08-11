@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trade Analyzer</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <div class="page">
+    <h1 class="title">Trade Analyzer</h1>
+
+    <label class="salary-toggle">
+      <input type="checkbox" id="salary-league-toggle" />
+      This is a salary-cap league
+    </label>
+
+    <form id="trade-form" class="split-container">
+      <div class="panel panel-dark" data-side="player_a">
+        <h2 class="panel-heading">Player One</h2>
+        <label class="field player-search">
+          <span class="field-label">Player Name</span>
+          <input type="text" name="name" autocomplete="off" placeholder="Start typing to select a player..." required />
+          <ul class="player-suggestions hidden"></ul>
+        </label>
+        <div class="field-row">
+          <label class="field">
+            <span class="field-label">Age</span>
+            <input type="number" name="age" min="0" required />
+          </label>
+          <label class="field">
+            <span class="field-label">Contract (yrs)</span>
+            <input type="number" name="contract_length" min="0" required />
+          </label>
+        </div>
+        <label class="field salary-field hidden">
+          <span class="field-label">League Salary</span>
+          <input type="number" name="salary" step="any" />
+        </label>
+        <div class="stats-section">
+          <span class="field-label">Stats</span>
+          <div class="stats-list"></div>
+          <button type="button" class="add-stat-btn">+ Add Stat</button>
+        </div>
+      </div>
+
+      <span class="for-label">for</span>
+
+      <div class="panel panel-light" data-side="player_b">
+        <h2 class="panel-heading">Player Two</h2>
+        <label class="field player-search">
+          <span class="field-label">Player Name</span>
+          <input type="text" name="name" autocomplete="off" placeholder="Start typing to select a player..." required />
+          <ul class="player-suggestions hidden"></ul>
+        </label>
+        <div class="field-row">
+          <label class="field">
+            <span class="field-label">Age</span>
+            <input type="number" name="age" min="0" required />
+          </label>
+          <label class="field">
+            <span class="field-label">Contract (yrs)</span>
+            <input type="number" name="contract_length" min="0" required />
+          </label>
+        </div>
+        <label class="field salary-field hidden">
+          <span class="field-label">League Salary</span>
+          <input type="number" name="salary" step="any" />
+        </label>
+        <div class="stats-section">
+          <span class="field-label">Stats</span>
+          <div class="stats-list"></div>
+          <button type="button" class="add-stat-btn">+ Add Stat</button>
+        </div>
+      </div>
+    </form>
+
+    <button type="submit" form="trade-form" class="analyze-btn">Analyze Trade</button>
+
+    <section id="results" class="results hidden"></section>
+  </div>
+
+  <template id="stat-row-template">
+    <div class="stat-row">
+      <input type="text" class="stat-name" placeholder="Stat name" />
+      <input type="number" class="stat-value" placeholder="Value" step="any" />
+      <button type="button" class="remove-stat-btn" aria-label="Remove stat">&times;</button>
+    </div>
+  </template>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
