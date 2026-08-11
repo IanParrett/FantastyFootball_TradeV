@@ -7,7 +7,6 @@ const resultsSection = document.getElementById("results");
 const playerSlotTemplate = document.getElementById("player-slot-template");
 const salaryCapField = document.querySelector(".salary-cap-field");
 const salaryCapInput = document.getElementById("salary-cap-input");
-const tePremiumToggle = document.getElementById("te-premium-toggle");
 const superflexToggle = document.getElementById("superflex-toggle");
 
 function isDynasty() {
@@ -260,7 +259,6 @@ form.addEventListener("submit", async (event) => {
     salary_cap: salaryToggle.checked ? salaryCapInput.value : null,
     league_format: document.querySelector('input[name="league-format"]:checked').value,
     scoring_format: document.querySelector('input[name="scoring-format"]:checked').value,
-    te_premium: tePremiumToggle.checked,
     superflex: superflexToggle.checked,
   };
 

@@ -32,8 +32,6 @@ STAT_POINTS = {
 @dataclass
 class LeagueSettings:
     ppr: float = 0.5  # points per reception: 0 = standard, 0.5 = half, 1 = full
-    te_premium: bool = False
-    te_premium_bonus: float = 0.5  # extra points per TE reception on top of ppr
     superflex: bool = False
     superflex_qb_multiplier: float = 1.4
 
@@ -49,12 +47,6 @@ class Player:
     sleeper_id: Optional[str] = None
 
 
-def _te_premium_bonus_points(player: Player, settings: LeagueSettings) -> float:
-    if not (settings.te_premium and player.position == "TE"):
-        return 0.0
-    return player.stats.get("Receptions", 0.0) * settings.te_premium_bonus
-
-
 def performance_score(player: Player, settings: LeagueSettings) -> float:
     if not player.stats:
         return 0.0
@@ -64,7 +56,6 @@ def performance_score(player: Player, settings: LeagueSettings) -> float:
             total += value * settings.ppr
             continue
         total += value * STAT_POINTS.get(label, 0.0)
-    total += _te_premium_bonus_points(player, settings)
     return total
 
 
@@ -85,16 +76,12 @@ def market_value(
     fc_value = fc_values.get(player.sleeper_id) if fc_values and player.sleeper_id else None
     if fc_value is not None:
         # Real crowd-sourced value from FantasyCalc, fetched for this exact
-        # league format/PPR/superflex combo - already accounts for all of
-        # that. TE Premium isn't something FantasyCalc tracks, so it's
-        # layered on top as our own bonus regardless of value source.
-        value = fc_value * DOLLAR_PER_FANTASYCALC_POINT
-        value += _te_premium_bonus_points(player, settings) * DOLLAR_PER_PERFORMANCE_POINT
-        return value
+        # league format/PPR/superflex combo - already accounts for all of it.
+        return fc_value * DOLLAR_PER_FANTASYCALC_POINT
 
     # Fallback formula for players FantasyCalc doesn't rank (K, DEF, deep
-    # bench, etc.) - superflex/TE premium have to be applied by hand here
-    # since there's no crowd data already accounting for them.
+    # bench, etc.) - superflex has to be applied by hand here since there's
+    # no crowd data already accounting for it.
     value = (
         performance_score(player, settings)
         * age_factor(player)

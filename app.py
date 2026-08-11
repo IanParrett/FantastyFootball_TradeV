@@ -34,7 +34,6 @@ def _build_settings(data: dict) -> Trade.LeagueSettings:
     ppr = {"standard": 0.0, "half_ppr": 0.5, "full_ppr": 1.0}.get(scoring, 0.5)
     return Trade.LeagueSettings(
         ppr=ppr,
-        te_premium=bool(data.get("te_premium")),
         superflex=bool(data.get("superflex")),
     )
 
