@@ -22,6 +22,10 @@ def _build_player(data: dict) -> Trade.Player:
     )
 
 
+def _build_team(players_data: list) -> list:
+    return [_build_player(p) for p in players_data if p.get("name")]
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -30,11 +34,11 @@ def index():
 @app.route("/api/compare", methods=["POST"])
 def api_compare():
     data = request.get_json(force=True)
-    player_a = _build_player(data.get("player_a", {}))
-    player_b = _build_player(data.get("player_b", {}))
+    team_a = _build_team(data.get("team_a", []))
+    team_b = _build_team(data.get("team_b", []))
     salary_cap = data.get("salary_cap")
     salary_cap = float(salary_cap) if salary_cap not in (None, "") else None
-    return jsonify(Trade.compare_trade(player_a, player_b, salary_cap))
+    return jsonify(Trade.compare_trade(team_a, team_b, salary_cap))
 
 
 @app.route("/api/players/search")

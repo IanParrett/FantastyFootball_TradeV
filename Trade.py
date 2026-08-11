@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 
 PEAK_AGE = 27
@@ -60,54 +60,68 @@ def trade_fairness_score(value_a: float, value_b: float) -> float:
     return max(0.0, fairness)
 
 
-def recommendation(player_a: Player, value_a: float, player_b: Player, value_b: float) -> str:
+def recommendation(label_a: str, value_a: float, label_b: str, value_b: float) -> str:
     diff = value_a - value_b
     threshold = 0.05 * max(value_a, value_b, 1)
     if abs(diff) <= threshold:
         return "Trade is balanced — neither side gains a significant advantage."
-    higher, lower = (player_a, player_b) if diff > 0 else (player_b, player_a)
+    higher, lower = (label_a, label_b) if diff > 0 else (label_b, label_a)
     return (
-        f"{higher.name} carries greater trade value than {lower.name} — "
-        f"the team acquiring {higher.name} benefits more from this trade."
+        f"{higher} carries greater total trade value than {lower} — "
+        f"the side acquiring {higher}'s players benefits more from this trade."
     )
 
 
-def compare_trade(player_a: Player, player_b: Player, salary_cap: Optional[float] = None) -> dict:
-    market_a = market_value(player_a)
-    market_b = market_value(player_b)
+def _team_breakdown(players: List[Player], salary_cap: Optional[float] = None) -> dict:
+    player_details = []
+    total_market = 0.0
+    total_final = 0.0
 
-    cap_pct_a = player_a.salary / salary_cap * 100 if salary_cap and player_a.salary is not None else None
-    cap_pct_b = player_b.salary / salary_cap * 100 if salary_cap and player_b.salary is not None else None
-    final_a = final_value(player_a, cap_pct_a)
-    final_b = final_value(player_b, cap_pct_b)
+    for player in players:
+        market = market_value(player)
+        cap_pct = (
+            player.salary / salary_cap * 100
+            if salary_cap and player.salary is not None
+            else None
+        )
+        final = final_value(player, cap_pct)
+        total_market += market
+        total_final += final
 
-    result = {
-        "player_a": {
-            "name": player_a.name,
-            "market_value": round(market_a, 2),
-            "final_value": round(final_a, 2),
-        },
-        "player_b": {
-            "name": player_b.name,
-            "market_value": round(market_b, 2),
-            "final_value": round(final_b, 2),
-        },
-        "trade_fairness_score": round(trade_fairness_score(final_a, final_b), 2),
-        "recommendation": recommendation(player_a, final_a, player_b, final_b),
+        detail = {
+            "name": player.name,
+            "market_value": round(market, 2),
+            "final_value": round(final, 2),
+        }
+        if player.salary is not None:
+            detail["salary"] = player.salary
+        if cap_pct is not None:
+            detail["cap_percentage"] = round(cap_pct, 2)
+            if cap_pct > 0:
+                detail["value_per_cap_percent"] = round(market / cap_pct, 2)
+        player_details.append(detail)
+
+    return {
+        "players": player_details,
+        "total_market_value": round(total_market, 2),
+        "total_final_value": round(total_final, 2),
     }
-    if player_a.salary is not None:
-        result["player_a"]["salary"] = player_a.salary
-    if player_b.salary is not None:
-        result["player_b"]["salary"] = player_b.salary
-    if cap_pct_a is not None:
-        result["player_a"]["cap_percentage"] = round(cap_pct_a, 2)
-        if cap_pct_a > 0:
-            result["player_a"]["value_per_cap_percent"] = round(market_a / cap_pct_a, 2)
-    if cap_pct_b is not None:
-        result["player_b"]["cap_percentage"] = round(cap_pct_b, 2)
-        if cap_pct_b > 0:
-            result["player_b"]["value_per_cap_percent"] = round(market_b / cap_pct_b, 2)
-    return result
+
+
+def compare_trade(
+    team_a: List[Player], team_b: List[Player], salary_cap: Optional[float] = None
+) -> dict:
+    side_a = _team_breakdown(team_a, salary_cap)
+    side_b = _team_breakdown(team_b, salary_cap)
+    final_a = side_a["total_final_value"]
+    final_b = side_b["total_final_value"]
+
+    return {
+        "team_a": side_a,
+        "team_b": side_b,
+        "trade_fairness_score": round(trade_fairness_score(final_a, final_b), 2),
+        "recommendation": recommendation("Team One", final_a, "Team Two", final_b),
+    }
 
 
 def prompt_float(message: str) -> float:
@@ -162,7 +176,7 @@ if __name__ == "__main__":
     player_a = prompt_player("Player A", is_salary_league)
     player_b = prompt_player("Player B", is_salary_league)
 
-    result = compare_trade(player_a, player_b)
+    result = compare_trade([player_a], [player_b])
     print("\n--- Results ---")
     for key, value in result.items():
         print(f"{key}: {value}")

@@ -1,37 +1,15 @@
+const MAX_PLAYERS_PER_TEAM = 5;
+
 const salaryToggle = document.getElementById("salary-league-toggle");
 const leagueFormatInputs = document.querySelectorAll('input[name="league-format"]');
 const form = document.getElementById("trade-form");
 const resultsSection = document.getElementById("results");
+const playerSlotTemplate = document.getElementById("player-slot-template");
+const salaryCapField = document.querySelector(".salary-cap-field");
+const salaryCapInput = document.getElementById("salary-cap-input");
 
 function isDynasty() {
   return document.querySelector('input[name="league-format"]:checked').value === "dynasty";
-}
-
-leagueFormatInputs.forEach((input) => {
-  input.addEventListener("change", () => {
-    const dynasty = isDynasty();
-    document.querySelectorAll(".contract-field").forEach((field) => {
-      field.classList.toggle("hidden", !dynasty);
-      const contractInput = field.querySelector("input");
-      contractInput.required = dynasty;
-      if (!dynasty) {
-        contractInput.value = "0";
-      }
-    });
-  });
-});
-
-function setPlayerStats(panel, stats) {
-  const entries = Object.entries(stats).map(([name, value]) => ({ name, value }));
-  panel.querySelector(".stats-data").value = JSON.stringify(entries);
-}
-
-function getPlayerStats(panel) {
-  try {
-    return JSON.parse(panel.querySelector(".stats-data").value || "[]");
-  } catch (err) {
-    return [];
-  }
 }
 
 function debounce(fn, delay) {
@@ -42,8 +20,21 @@ function debounce(fn, delay) {
   };
 }
 
-document.querySelectorAll(".player-search").forEach((wrapper) => {
-  const panel = wrapper.closest(".panel");
+function setPlayerStats(slot, stats) {
+  const entries = Object.entries(stats).map(([name, value]) => ({ name, value }));
+  slot.querySelector(".stats-data").value = JSON.stringify(entries);
+}
+
+function getPlayerStats(slot) {
+  try {
+    return JSON.parse(slot.querySelector(".stats-data").value || "[]");
+  } catch (err) {
+    return [];
+  }
+}
+
+function wirePlayerSearch(slot) {
+  const wrapper = slot.querySelector(".player-search");
   const input = wrapper.querySelector('input[name="name"]');
   const list = wrapper.querySelector(".player-suggestions");
 
@@ -84,9 +75,9 @@ document.querySelectorAll(".player-search").forEach((wrapper) => {
 
     input.value = detail.name;
     if (detail.age != null) {
-      panel.querySelector('input[name="age"]').value = detail.age;
+      slot.querySelector('input[name="age"]').value = detail.age;
     }
-    setPlayerStats(panel, detail.stats || {});
+    setPlayerStats(slot, detail.stats || {});
   });
 
   document.addEventListener("click", (event) => {
@@ -94,10 +85,60 @@ document.querySelectorAll(".player-search").forEach((wrapper) => {
       list.classList.add("hidden");
     }
   });
+}
+
+function applyCurrentToggles(slot) {
+  const dynasty = isDynasty();
+  const contractField = slot.querySelector(".contract-field");
+  contractField.classList.toggle("hidden", !dynasty);
+  contractField.querySelector("input").required = dynasty;
+
+  const salaryField = slot.querySelector(".salary-field");
+  salaryField.classList.toggle("hidden", !salaryToggle.checked);
+  salaryField.querySelector("input").required = salaryToggle.checked;
+}
+
+function updateSlotControls(panel) {
+  const slots = panel.querySelectorAll(".player-slot");
+  slots.forEach((slot) => {
+    slot.querySelector(".remove-player-btn").classList.toggle("hidden", slots.length <= 1);
+  });
+  panel.querySelector(".add-player-btn").disabled = slots.length >= MAX_PLAYERS_PER_TEAM;
+}
+
+function addPlayerSlot(panel) {
+  const slot = playerSlotTemplate.content.firstElementChild.cloneNode(true);
+  panel.querySelector(".players-list").appendChild(slot);
+
+  wirePlayerSearch(slot);
+  applyCurrentToggles(slot);
+  slot.querySelector(".remove-player-btn").addEventListener("click", () => {
+    slot.remove();
+    updateSlotControls(panel);
+  });
+
+  updateSlotControls(panel);
+  return slot;
+}
+
+document.querySelectorAll(".panel").forEach((panel) => {
+  addPlayerSlot(panel);
+  panel.querySelector(".add-player-btn").addEventListener("click", () => addPlayerSlot(panel));
 });
 
-const salaryCapField = document.querySelector(".salary-cap-field");
-const salaryCapInput = document.getElementById("salary-cap-input");
+leagueFormatInputs.forEach((input) => {
+  input.addEventListener("change", () => {
+    const dynasty = isDynasty();
+    document.querySelectorAll(".contract-field").forEach((field) => {
+      field.classList.toggle("hidden", !dynasty);
+      const contractInput = field.querySelector("input");
+      contractInput.required = dynasty;
+      if (!dynasty) {
+        contractInput.value = "0";
+      }
+    });
+  });
+});
 
 salaryToggle.addEventListener("change", () => {
   document.querySelectorAll(".salary-field").forEach((field) => {
@@ -107,48 +148,74 @@ salaryToggle.addEventListener("change", () => {
   salaryCapField.classList.toggle("hidden", !salaryToggle.checked);
 });
 
-function collectPlayer(panel) {
+function collectPlayer(slot) {
   return {
-    name: panel.querySelector('input[name="name"]').value,
-    age: panel.querySelector('input[name="age"]').value,
-    contract_length: panel.querySelector('input[name="contract_length"]').value,
-    salary: salaryToggle.checked ? panel.querySelector('input[name="salary"]').value : null,
-    stats: getPlayerStats(panel),
+    name: slot.querySelector('input[name="name"]').value,
+    age: slot.querySelector('input[name="age"]').value,
+    contract_length: slot.querySelector('input[name="contract_length"]').value,
+    salary: salaryToggle.checked ? slot.querySelector('input[name="salary"]').value : null,
+    stats: getPlayerStats(slot),
   };
+}
+
+function collectTeam(panel) {
+  return Array.from(panel.querySelectorAll(".player-slot"))
+    .map(collectPlayer)
+    .filter((p) => p.name.trim() !== "");
 }
 
 function formatMoney(value) {
   return value.toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
 
-function renderResults(result) {
-  const showSalary = salaryToggle.checked;
-  const cardHtml = (side, label) => `
-    <div class="results-card">
-      <h4>${result[side].name || label}</h4>
-      <dl>
-        <dt>Market value</dt><dd>${formatMoney(result[side].market_value)}</dd>
-        ${showSalary ? `<dt>Salary</dt><dd>${formatMoney(result[side].salary ?? 0)}</dd>` : ""}
-        ${
-          showSalary && result[side].cap_percentage != null
-            ? `<dt>% of Cap</dt><dd>${result[side].cap_percentage}%</dd>`
-            : ""
-        }
-        ${
-          showSalary && result[side].value_per_cap_percent != null
-            ? `<dt>Value per 1% Cap</dt><dd>${formatMoney(result[side].value_per_cap_percent)}</dd>`
-            : ""
-        }
-        ${showSalary ? `<dt>Final value</dt><dd>${formatMoney(result[side].final_value)}</dd>` : ""}
-      </dl>
+function playerRowHtml(p, showSalary) {
+  return `
+    <div class="player-result">
+      <div class="player-result-header">
+        <span class="player-result-name">${p.name}</span>
+        <span class="player-result-value">${formatMoney(p.market_value)}</span>
+      </div>
+      ${
+        showSalary
+          ? `<div class="player-result-detail">
+              <span>Salary: ${formatMoney(p.salary ?? 0)}</span>
+              ${p.cap_percentage != null ? `<span>${p.cap_percentage}% of cap</span>` : ""}
+              ${p.value_per_cap_percent != null ? `<span>${formatMoney(p.value_per_cap_percent)} / 1% cap</span>` : ""}
+              <span>Final: ${formatMoney(p.final_value)}</span>
+            </div>`
+          : ""
+      }
     </div>
   `;
+}
+
+function teamCardHtml(team, label, showSalary) {
+  return `
+    <div class="results-card">
+      <h4>${label}</h4>
+      <div class="team-total">
+        <span>Total market value</span><strong>${formatMoney(team.total_market_value)}</strong>
+      </div>
+      ${
+        showSalary
+          ? `<div class="team-total"><span>Total final value</span><strong>${formatMoney(team.total_final_value)}</strong></div>`
+          : ""
+      }
+      <div class="player-results">
+        ${team.players.map((p) => playerRowHtml(p, showSalary)).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderResults(result) {
+  const showSalary = salaryToggle.checked;
 
   resultsSection.innerHTML = `
     <h3>Results</h3>
     <div class="results-grid">
-      ${cardHtml("player_a", "Player One")}
-      ${cardHtml("player_b", "Player Two")}
+      ${teamCardHtml(result.team_a, "Team One", showSalary)}
+      ${teamCardHtml(result.team_b, "Team Two", showSalary)}
     </div>
     <div class="fairness">Trade fairness: ${result.trade_fairness_score}%</div>
     <p class="recommendation">${result.recommendation}</p>
@@ -161,8 +228,8 @@ form.addEventListener("submit", async (event) => {
   resultsSection.classList.add("hidden");
 
   const payload = {
-    player_a: collectPlayer(form.querySelector('[data-side="player_a"]')),
-    player_b: collectPlayer(form.querySelector('[data-side="player_b"]')),
+    team_a: collectTeam(form.querySelector('[data-side="team_a"]')),
+    team_b: collectTeam(form.querySelector('[data-side="team_b"]')),
     salary_cap: salaryToggle.checked ? salaryCapInput.value : null,
   };
 
