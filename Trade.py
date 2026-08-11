@@ -68,7 +68,7 @@ def recommendation(player_a: Player, value_a: float, player_b: Player, value_b: 
     )
 
 
-def compare_trade(player_a: Player, player_b: Player) -> dict:
+def compare_trade(player_a: Player, player_b: Player, salary_cap: Optional[float] = None) -> dict:
     market_a = market_value(player_a)
     market_b = market_value(player_b)
     final_a = final_value(player_a)
@@ -88,10 +88,11 @@ def compare_trade(player_a: Player, player_b: Player) -> dict:
         "trade_fairness_score": round(trade_fairness_score(final_a, final_b), 2),
         "recommendation": recommendation(player_a, final_a, player_b, final_b),
     }
-    if player_a.salary is not None:
-        result["player_a"]["salary"] = player_a.salary
-    if player_b.salary is not None:
-        result["player_b"]["salary"] = player_b.salary
+    for key, player in (("player_a", player_a), ("player_b", player_b)):
+        if player.salary is not None:
+            result[key]["salary"] = player.salary
+            if salary_cap:
+                result[key]["cap_percentage"] = round(player.salary / salary_cap * 100, 2)
     return result
 
 

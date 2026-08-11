@@ -58,6 +58,27 @@ body {
   color: #555;
 }
 
+.salary-cap-field {
+  width: 220px;
+  text-align: center;
+  margin: 0;
+}
+
+.salary-cap-field input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: #fff;
+  color: #222;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.salary-cap-field input:focus {
+  outline: 2px solid #f5821f;
+}
+
 .split-container {
   position: relative;
   display: flex;

@@ -110,11 +110,15 @@ document.querySelectorAll(".player-search").forEach((wrapper) => {
   });
 });
 
+const salaryCapField = document.querySelector(".salary-cap-field");
+const salaryCapInput = document.getElementById("salary-cap-input");
+
 salaryToggle.addEventListener("change", () => {
   document.querySelectorAll(".salary-field").forEach((field) => {
     field.classList.toggle("hidden", !salaryToggle.checked);
     field.querySelector("input").required = salaryToggle.checked;
   });
+  salaryCapField.classList.toggle("hidden", !salaryToggle.checked);
 });
 
 function collectPlayer(panel) {
@@ -146,6 +150,11 @@ function renderResults(result) {
       <dl>
         <dt>Market value</dt><dd>${formatMoney(result[side].market_value)}</dd>
         ${showSalary ? `<dt>Salary</dt><dd>${formatMoney(result[side].salary ?? 0)}</dd>` : ""}
+        ${
+          showSalary && result[side].cap_percentage != null
+            ? `<dt>% of Cap</dt><dd>${result[side].cap_percentage}%</dd>`
+            : ""
+        }
         ${showSalary ? `<dt>Final value</dt><dd>${formatMoney(result[side].final_value)}</dd>` : ""}
       </dl>
     </div>
@@ -170,6 +179,7 @@ form.addEventListener("submit", async (event) => {
   const payload = {
     player_a: collectPlayer(form.querySelector('[data-side="player_a"]')),
     player_b: collectPlayer(form.querySelector('[data-side="player_b"]')),
+    salary_cap: salaryToggle.checked ? salaryCapInput.value : null,
   };
 
   try {

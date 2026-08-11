@@ -32,7 +32,9 @@ def api_compare():
     data = request.get_json(force=True)
     player_a = _build_player(data.get("player_a", {}))
     player_b = _build_player(data.get("player_b", {}))
-    return jsonify(Trade.compare_trade(player_a, player_b))
+    salary_cap = data.get("salary_cap")
+    salary_cap = float(salary_cap) if salary_cap not in (None, "") else None
+    return jsonify(Trade.compare_trade(player_a, player_b, salary_cap))
 
 
 @app.route("/api/players/search")
