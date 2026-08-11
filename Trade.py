@@ -41,8 +41,12 @@ def market_value(player: Player) -> float:
     )
 
 
-def final_value(player: Player) -> float:
+def final_value(player: Player, cap_percentage: Optional[float] = None) -> float:
     value = market_value(player)
+    if cap_percentage is not None:
+        # A player eating a bigger slice of the cap surrenders that much
+        # of their market value back as trade cost.
+        return value * (1 - cap_percentage / 100)
     if player.salary is not None:
         return value - player.salary
     return value
@@ -71,8 +75,11 @@ def recommendation(player_a: Player, value_a: float, player_b: Player, value_b: 
 def compare_trade(player_a: Player, player_b: Player, salary_cap: Optional[float] = None) -> dict:
     market_a = market_value(player_a)
     market_b = market_value(player_b)
-    final_a = final_value(player_a)
-    final_b = final_value(player_b)
+
+    cap_pct_a = player_a.salary / salary_cap * 100 if salary_cap and player_a.salary is not None else None
+    cap_pct_b = player_b.salary / salary_cap * 100 if salary_cap and player_b.salary is not None else None
+    final_a = final_value(player_a, cap_pct_a)
+    final_b = final_value(player_b, cap_pct_b)
 
     result = {
         "player_a": {
@@ -88,11 +95,14 @@ def compare_trade(player_a: Player, player_b: Player, salary_cap: Optional[float
         "trade_fairness_score": round(trade_fairness_score(final_a, final_b), 2),
         "recommendation": recommendation(player_a, final_a, player_b, final_b),
     }
-    for key, player in (("player_a", player_a), ("player_b", player_b)):
-        if player.salary is not None:
-            result[key]["salary"] = player.salary
-            if salary_cap:
-                result[key]["cap_percentage"] = round(player.salary / salary_cap * 100, 2)
+    if player_a.salary is not None:
+        result["player_a"]["salary"] = player_a.salary
+    if player_b.salary is not None:
+        result["player_b"]["salary"] = player_b.salary
+    if cap_pct_a is not None:
+        result["player_a"]["cap_percentage"] = round(cap_pct_a, 2)
+    if cap_pct_b is not None:
+        result["player_b"]["cap_percentage"] = round(cap_pct_b, 2)
     return result
 
 
