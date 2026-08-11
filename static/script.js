@@ -1,4 +1,3 @@
-const statRowTemplate = document.getElementById("stat-row-template");
 const salaryToggle = document.getElementById("salary-league-toggle");
 const leagueFormatInputs = document.querySelectorAll('input[name="league-format"]');
 const form = document.getElementById("trade-form");
@@ -22,31 +21,18 @@ leagueFormatInputs.forEach((input) => {
   });
 });
 
-function addStatRow(panel, name = "", value = "") {
-  const row = statRowTemplate.content.firstElementChild.cloneNode(true);
-  row.querySelector(".stat-name").value = name;
-  row.querySelector(".stat-value").value = value;
-  row.querySelector(".remove-stat-btn").addEventListener("click", () => row.remove());
-  panel.querySelector(".stats-list").appendChild(row);
+function setPlayerStats(panel, stats) {
+  const entries = Object.entries(stats).map(([name, value]) => ({ name, value }));
+  panel.querySelector(".stats-data").value = JSON.stringify(entries);
 }
 
-function setStatRows(panel, stats) {
-  panel.querySelector(".stats-list").innerHTML = "";
-  const entries = Object.entries(stats);
-  if (entries.length === 0) {
-    addStatRow(panel);
-    addStatRow(panel);
-    return;
+function getPlayerStats(panel) {
+  try {
+    return JSON.parse(panel.querySelector(".stats-data").value || "[]");
+  } catch (err) {
+    return [];
   }
-  entries.forEach(([name, value]) => addStatRow(panel, name, value));
 }
-
-document.querySelectorAll(".add-stat-btn").forEach((btn) => {
-  const panel = btn.closest(".panel");
-  addStatRow(panel);
-  addStatRow(panel);
-  btn.addEventListener("click", () => addStatRow(panel));
-});
 
 function debounce(fn, delay) {
   let timer;
@@ -100,7 +86,7 @@ document.querySelectorAll(".player-search").forEach((wrapper) => {
     if (detail.age != null) {
       panel.querySelector('input[name="age"]').value = detail.age;
     }
-    setStatRows(panel, detail.stats || {});
+    setPlayerStats(panel, detail.stats || {});
   });
 
   document.addEventListener("click", (event) => {
@@ -122,19 +108,12 @@ salaryToggle.addEventListener("change", () => {
 });
 
 function collectPlayer(panel) {
-  const stats = Array.from(panel.querySelectorAll(".stat-row"))
-    .map((row) => ({
-      name: row.querySelector(".stat-name").value.trim(),
-      value: row.querySelector(".stat-value").value,
-    }))
-    .filter((s) => s.name && s.value !== "");
-
   return {
     name: panel.querySelector('input[name="name"]').value,
     age: panel.querySelector('input[name="age"]').value,
     contract_length: panel.querySelector('input[name="contract_length"]').value,
     salary: salaryToggle.checked ? panel.querySelector('input[name="salary"]').value : null,
-    stats,
+    stats: getPlayerStats(panel),
   };
 }
 

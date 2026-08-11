@@ -54,11 +54,7 @@
           <span class="field-label">League Salary</span>
           <input type="number" name="salary" step="any" />
         </label>
-        <div class="stats-section">
-          <span class="field-label">Stats</span>
-          <div class="stats-list"></div>
-          <button type="button" class="add-stat-btn">+ Add Stat</button>
-        </div>
+        <input type="hidden" class="stats-data" value="[]" />
       </div>
 
       <span class="for-label">for</span>
@@ -84,11 +80,7 @@
           <span class="field-label">League Salary</span>
           <input type="number" name="salary" step="any" />
         </label>
-        <div class="stats-section">
-          <span class="field-label">Stats</span>
-          <div class="stats-list"></div>
-          <button type="button" class="add-stat-btn">+ Add Stat</button>
-        </div>
+        <input type="hidden" class="stats-data" value="[]" />
       </div>
     </form>
 
@@ -96,14 +88,6 @@
 
     <section id="results" class="results hidden"></section>
   </div>
-
-  <template id="stat-row-template">
-    <div class="stat-row">
-      <input type="text" class="stat-name" placeholder="Stat name" />
-      <input type="number" class="stat-value" placeholder="Value" step="any" />
-      <button type="button" class="remove-stat-btn" aria-label="Remove stat">&times;</button>
-    </div>
-  </template>
 
   <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>

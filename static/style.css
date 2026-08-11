@@ -214,64 +214,6 @@ body {
   font-size: 0.8rem;
 }
 
-.stats-section {
-  margin-top: 8px;
-}
-
-.stat-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 8px;
-  align-items: center;
-}
-
-.stat-row input {
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid rgba(128, 128, 128, 0.5);
-  background: rgba(255, 255, 255, 0.08);
-  color: inherit;
-  font-size: 0.9rem;
-}
-
-.panel-light .stat-row input {
-  background: #fff;
-  border-color: #ccc;
-}
-
-.stat-name {
-  flex: 1.4;
-}
-
-.stat-value {
-  flex: 1;
-}
-
-.remove-stat-btn {
-  background: none;
-  border: none;
-  color: inherit;
-  font-size: 1.2rem;
-  cursor: pointer;
-  opacity: 0.6;
-  line-height: 1;
-}
-
-.remove-stat-btn:hover {
-  opacity: 1;
-}
-
-.add-stat-btn {
-  background: none;
-  border: 1px dashed rgba(128, 128, 128, 0.6);
-  color: inherit;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  margin-top: 4px;
-}
-
 .analyze-btn {
   display: block;
   margin: 32px auto 0;
