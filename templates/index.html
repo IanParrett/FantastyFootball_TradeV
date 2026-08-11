@@ -10,10 +10,23 @@
   <div class="page">
     <h1 class="title">Trade Analyzer</h1>
 
-    <label class="salary-toggle">
-      <input type="checkbox" id="salary-league-toggle" />
-      This is a salary-cap league
-    </label>
+    <div class="league-settings">
+      <div class="league-format-toggle">
+        <span class="field-label">League Format</span>
+        <label>
+          <input type="radio" name="league-format" value="redraft" checked />
+          Redraft (single season)
+        </label>
+        <label>
+          <input type="radio" name="league-format" value="dynasty" />
+          Dynasty / Keeper (multi-year)
+        </label>
+      </div>
+      <label class="salary-toggle">
+        <input type="checkbox" id="salary-league-toggle" />
+        This is a salary-cap league
+      </label>
+    </div>
 
     <form id="trade-form" class="split-container">
       <div class="panel panel-dark" data-side="player_a">
@@ -28,9 +41,9 @@
             <span class="field-label">Age</span>
             <input type="number" name="age" min="0" required />
           </label>
-          <label class="field">
+          <label class="field contract-field hidden">
             <span class="field-label">Contract (yrs)</span>
-            <input type="number" name="contract_length" min="0" required />
+            <input type="number" name="contract_length" min="0" value="0" />
           </label>
         </div>
         <label class="field salary-field hidden">
@@ -58,9 +71,9 @@
             <span class="field-label">Age</span>
             <input type="number" name="age" min="0" required />
           </label>
-          <label class="field">
+          <label class="field contract-field hidden">
             <span class="field-label">Contract (yrs)</span>
-            <input type="number" name="contract_length" min="0" required />
+            <input type="number" name="contract_length" min="0" value="0" />
           </label>
         </div>
         <label class="field salary-field hidden">

@@ -1,7 +1,26 @@
 const statRowTemplate = document.getElementById("stat-row-template");
 const salaryToggle = document.getElementById("salary-league-toggle");
+const leagueFormatInputs = document.querySelectorAll('input[name="league-format"]');
 const form = document.getElementById("trade-form");
 const resultsSection = document.getElementById("results");
+
+function isDynasty() {
+  return document.querySelector('input[name="league-format"]:checked').value === "dynasty";
+}
+
+leagueFormatInputs.forEach((input) => {
+  input.addEventListener("change", () => {
+    const dynasty = isDynasty();
+    document.querySelectorAll(".contract-field").forEach((field) => {
+      field.classList.toggle("hidden", !dynasty);
+      const contractInput = field.querySelector("input");
+      contractInput.required = dynasty;
+      if (!dynasty) {
+        contractInput.value = "0";
+      }
+    });
+  });
+});
 
 function addStatRow(panel, name = "", value = "") {
   const row = statRowTemplate.content.firstElementChild.cloneNode(true);
