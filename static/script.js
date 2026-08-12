@@ -293,6 +293,12 @@ function renderResults(result) {
       ${teamCardHtml(result.team_b, "Team Two", showSalary)}
     </div>
     <div class="fairness">Trade fairness: ${result.trade_fairness_score}%</div>
+    <p class="fairness-explainer">
+      This compares the two sides' total values to each other, not whether any one
+      player was individually over- or underpaid. Each player's own surplus or
+      deficit (vs. their expected auction price) is already baked into their value
+      above — fairness just measures how evenly the two final totals balance out.
+    </p>
     <p class="recommendation">${result.recommendation}</p>
     ${worthComparisonHtml(result)}
   `;
