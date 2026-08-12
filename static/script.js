@@ -294,7 +294,7 @@ async function loadAuctionValues() {
   auctionValuesBody.innerHTML = `<tr><td colspan="5">Loading...</td></tr>`;
   const scoring = document.querySelector('input[name="scoring-format"]:checked').value;
   const response = await fetch(
-    `/api/auction-values?scoring_format=${scoring}&position=${currentAuctionPosition}`
+    `/api/auction-values?scoring_format=${scoring}&position=${currentAuctionPosition}&superflex=${superflexToggle.checked}`
   );
   const players = response.ok ? await response.json() : [];
 
@@ -342,4 +342,10 @@ document.querySelectorAll('input[name="scoring-format"]').forEach((input) => {
       loadAuctionValues();
     }
   });
+});
+
+superflexToggle.addEventListener("change", () => {
+  if (!auctionValuesPanel.classList.contains("hidden")) {
+    loadAuctionValues();
+  }
 });

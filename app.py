@@ -8,7 +8,7 @@ import Trade
 app = Flask(__name__)
 
 
-def _build_player(data: dict, scoring: str, espn_values: dict) -> Trade.Player:
+def _build_player(data: dict, espn_values: dict) -> Trade.Player:
     salary = data.get("salary")
     stats = {
         stat["name"]: float(stat["value"])
@@ -16,7 +16,6 @@ def _build_player(data: dict, scoring: str, espn_values: dict) -> Trade.Player:
         if stat.get("name")
     }
     name = (data.get("name") or "Player").strip()
-    espn_entry = espn_values.get(espn.normalize_name(name))
     return Trade.Player(
         name=name,
         stats=stats,
@@ -25,12 +24,12 @@ def _build_player(data: dict, scoring: str, espn_values: dict) -> Trade.Player:
         salary=float(salary) if salary not in (None, "") else None,
         position=data.get("position") or None,
         sleeper_id=data.get("sleeper_id") or None,
-        espn_auction_value=espn_entry.get(scoring) if espn_entry else None,
+        espn_auction_value=espn_values.get(espn.normalize_name(name)),
     )
 
 
-def _build_team(players_data: list, scoring: str, espn_values: dict) -> list:
-    return [_build_player(p, scoring, espn_values) for p in players_data if p.get("name")]
+def _build_team(players_data: list, espn_values: dict) -> list:
+    return [_build_player(p, espn_values) for p in players_data if p.get("name")]
 
 
 def _build_settings(data: dict) -> Trade.LeagueSettings:
@@ -50,9 +49,9 @@ def _get_fc_values(data: dict, settings: Trade.LeagueSettings) -> dict:
         return {}
 
 
-def _get_espn_values() -> dict:
+def _get_espn_values(scoring: str, superflex: bool) -> dict:
     try:
-        return espn.get_auction_values()
+        return espn.get_auction_values(scoring, superflex)
     except Exception:
         return {}
 
@@ -67,9 +66,9 @@ def api_compare():
     data = request.get_json(force=True)
     settings = _build_settings(data)
     scoring = data.get("scoring_format", "half_ppr")
-    espn_values = _get_espn_values()
-    team_a = _build_team(data.get("team_a", []), scoring, espn_values)
-    team_b = _build_team(data.get("team_b", []), scoring, espn_values)
+    espn_values = _get_espn_values(scoring, settings.superflex)
+    team_a = _build_team(data.get("team_a", []), espn_values)
+    team_b = _build_team(data.get("team_b", []), espn_values)
     fc_values = _get_fc_values(data, settings)
     salary_cap = data.get("salary_cap")
     salary_cap = float(salary_cap) if salary_cap not in (None, "") else None
@@ -80,8 +79,9 @@ def api_compare():
 def api_auction_values():
     scoring = request.args.get("scoring_format", "half_ppr")
     position = request.args.get("position", "ALL")
+    superflex = request.args.get("superflex") == "true"
     try:
-        return jsonify(espn.get_ranked_players(scoring, position))
+        return jsonify(espn.get_ranked_players(scoring, position, superflex))
     except Exception:
         return jsonify([])
 

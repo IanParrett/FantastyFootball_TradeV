@@ -54,40 +54,51 @@ def _fetch_raw() -> list:
     return _cache["data"]
 
 
-def get_auction_values() -> dict:
-    """Returns {normalized_name: {"standard": $, "half_ppr": $, "full_ppr": $}}
-    calibrated to a $200 budget, built from ESPN's real draft auction values.
+def _resolve_value(ranks: dict, scoring_format: str, superflex: bool):
+    if superflex:
+        # ESPN tracks Superflex as its own single category, not crossed
+        # with PPR/Standard - a 2nd startable QB slot is the dominant
+        # factor, so this is used as-is regardless of scoring format.
+        return ranks.get("SUPERFLEX", {}).get("auctionValue")
+
+    standard = ranks.get("STANDARD", {}).get("auctionValue")
+    ppr = ranks.get("PPR", {}).get("auctionValue")
+    if not standard and not ppr:
+        return None
+    standard = standard or ppr
+    ppr = ppr or standard
+    return {"standard": standard, "half_ppr": (standard + ppr) / 2, "full_ppr": ppr}.get(
+        scoring_format, (standard + ppr) / 2
+    )
+
+
+def get_auction_values(scoring_format: str, superflex: bool = False) -> dict:
+    """Returns {normalized_name: auction_value} calibrated to a $200
+    budget, built from ESPN's real draft auction values for the given
+    scoring format / superflex setting.
     """
     players = _fetch_raw()
     values = {}
     for p in players:
         ranks = p.get("draftRanksByRankType") or {}
-        standard = ranks.get("STANDARD", {}).get("auctionValue")
-        ppr = ranks.get("PPR", {}).get("auctionValue")
-        if not standard and not ppr:
+        value = _resolve_value(ranks, scoring_format, superflex)
+        if not value:
             continue
-        standard = standard or ppr
-        ppr = ppr or standard
         name = normalize_name(p.get("fullName"))
         if not name:
             continue
-        values[name] = {
-            "standard": standard,
-            "half_ppr": (standard + ppr) / 2,
-            "full_ppr": ppr,
-        }
+        values[name] = value
     return values
 
 
-def get_auction_value(player_name: str, scoring_format: str) -> float:
-    values = get_auction_values()
-    entry = values.get(normalize_name(player_name))
-    if entry is None:
-        return None
-    return entry.get(scoring_format)
+def get_auction_value(player_name: str, scoring_format: str, superflex: bool = False) -> float:
+    values = get_auction_values(scoring_format, superflex)
+    return values.get(normalize_name(player_name))
 
 
-def get_ranked_players(scoring_format: str, position: str = None, limit: int = 300) -> list:
+def get_ranked_players(
+    scoring_format: str, position: str = None, superflex: bool = False, limit: int = 300
+) -> list:
     """Full list of players with a real auction value, sorted highest to
     lowest, for display as a reference table.
     """
@@ -102,15 +113,7 @@ def get_ranked_players(scoring_format: str, position: str = None, limit: int = 3
             continue
 
         ranks = p.get("draftRanksByRankType") or {}
-        standard = ranks.get("STANDARD", {}).get("auctionValue")
-        ppr = ranks.get("PPR", {}).get("auctionValue")
-        if not standard and not ppr:
-            continue
-        standard = standard or ppr
-        ppr = ppr or standard
-        value = {"standard": standard, "half_ppr": (standard + ppr) / 2, "full_ppr": ppr}.get(
-            scoring_format, (standard + ppr) / 2
-        )
+        value = _resolve_value(ranks, scoring_format, superflex)
         if not value:
             continue
 
