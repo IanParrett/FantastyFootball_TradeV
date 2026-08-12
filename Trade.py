@@ -6,6 +6,17 @@ PEAK_AGE = 27
 DOLLAR_PER_PERFORMANCE_POINT = 200_000
 DOLLAR_PER_FANTASYCALC_POINT = 5_000
 
+# Cap commitments up to this threshold are discounted at the normal linear
+# rate - roughly what a solid starter costs in a typical league. Above it,
+# each additional point of cap is treated as accelerating opportunity cost
+# (crowding out the rest of the roster) and penalized at CAP_EXCESS_MULTIPLIER
+# times the normal rate. Modeled after real NFL surplus-value analysis
+# (Over The Cap: surplus = expected % of cap - actual % of cap, both same
+# unit) plus the standard economic principle that the cost of committing a
+# scarce, fixed budget accelerates as you approach its ceiling.
+CAP_DISCOUNT_THRESHOLD = 20.0
+CAP_EXCESS_MULTIPLIER = 2.0
+
 # Points per unit for standard fantasy scoring, keyed by the friendly stat
 # labels sleeper.py assigns. "Receptions" is handled separately since its
 # value depends on the league's PPR setting.
@@ -93,6 +104,15 @@ def market_value(
     return value
 
 
+def cap_discount_fraction(cap_percentage: float) -> float:
+    if cap_percentage <= CAP_DISCOUNT_THRESHOLD:
+        discount = cap_percentage
+    else:
+        excess = cap_percentage - CAP_DISCOUNT_THRESHOLD
+        discount = CAP_DISCOUNT_THRESHOLD + excess * CAP_EXCESS_MULTIPLIER
+    return min(discount / 100, 1.0)
+
+
 def final_value(
     player: Player,
     settings: LeagueSettings,
@@ -102,8 +122,9 @@ def final_value(
     value = market_value(player, settings, fc_values)
     if cap_percentage is not None:
         # A player eating a bigger slice of the cap surrenders that much
-        # of their market value back as trade cost.
-        return value * (1 - cap_percentage / 100)
+        # of their market value back as trade cost - and it accelerates
+        # past CAP_DISCOUNT_THRESHOLD (see constant above).
+        return value * (1 - cap_discount_fraction(cap_percentage))
     if player.salary is not None:
         return value - player.salary
     return value
