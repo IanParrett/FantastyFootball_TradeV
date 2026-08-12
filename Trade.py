@@ -206,6 +206,8 @@ def _team_breakdown(
     player_details = []
     total_market = 0.0
     total_final = 0.0
+    total_league_dollars = 0.0
+    has_league_dollars = False
 
     for player in players:
         market = market_value(player, settings, fc_values)
@@ -243,14 +245,20 @@ def _team_breakdown(
                     # worth to you" in dollars you can directly compare
                     # to what you paid.
                     expected_dollars = expected_pct / 100 * salary_cap
-                    detail["league_dollar_value"] = round((final / market) * expected_dollars, 2)
+                    league_dollar_value = (final / market) * expected_dollars
+                    detail["league_dollar_value"] = round(league_dollar_value, 2)
+                    total_league_dollars += league_dollar_value
+                    has_league_dollars = True
         player_details.append(detail)
 
-    return {
+    result = {
         "players": player_details,
         "total_market_value": round(total_market, 2),
         "total_final_value": round(total_final, 2),
     }
+    if has_league_dollars:
+        result["total_league_dollar_value"] = round(total_league_dollars, 2)
+    return result
 
 
 def compare_trade(

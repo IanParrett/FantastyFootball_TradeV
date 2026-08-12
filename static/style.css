@@ -538,6 +538,51 @@ body {
   color: #444;
 }
 
+.team-total-worth strong {
+  color: #f5821f;
+}
+
+.worth-comparison {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
+
+.worth-comparison h4 {
+  margin: 0 0 12px;
+}
+
+.worth-comparison-row {
+  display: flex;
+  gap: 24px;
+}
+
+.worth-comparison-side {
+  flex: 1;
+  background: #f7f7f8;
+  border-radius: 8px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.worth-comparison-side span {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.worth-comparison-side strong {
+  font-size: 1.3rem;
+  color: #2f2f33;
+}
+
+.worth-comparison-verdict {
+  margin-top: 12px;
+  color: #444;
+  font-weight: 600;
+}
+
 .error-message {
   color: #b00020;
   margin-top: 16px;

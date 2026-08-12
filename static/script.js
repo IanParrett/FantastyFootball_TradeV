@@ -225,9 +225,44 @@ function teamCardHtml(team, label, showSalary) {
           ? `<div class="team-total"><span>Total final value</span><strong>${formatMoney(team.total_final_value)}</strong></div>`
           : ""
       }
+      ${
+        team.total_league_dollar_value != null
+          ? `<div class="team-total team-total-worth"><span>Total worth to you</span><strong>${formatLeagueDollars(team.total_league_dollar_value)}</strong></div>`
+          : ""
+      }
       <div class="player-results">
         ${team.players.map((p) => playerRowHtml(p, showSalary)).join("")}
       </div>
+    </div>
+  `;
+}
+
+function worthComparisonHtml(result) {
+  const a = result.team_a.total_league_dollar_value;
+  const b = result.team_b.total_league_dollar_value;
+  if (a == null || b == null) return "";
+  const diff = Math.abs(a - b);
+  const higher = a > b ? "Team One" : b > a ? "Team Two" : null;
+  return `
+    <div class="worth-comparison">
+      <h4>Are both sides getting a fair amount?</h4>
+      <div class="worth-comparison-row">
+        <div class="worth-comparison-side">
+          <span>Team One gives up</span>
+          <strong>${formatLeagueDollars(a)}</strong>
+        </div>
+        <div class="worth-comparison-side">
+          <span>Team Two gives up</span>
+          <strong>${formatLeagueDollars(b)}</strong>
+        </div>
+      </div>
+      <p class="worth-comparison-verdict">
+        ${
+          higher
+            ? `${higher} is giving up ${formatLeagueDollars(diff)} more in real value than they're getting back.`
+            : "Both sides are giving up an equal amount of real value — a dead-even trade."
+        }
+      </p>
     </div>
   `;
 }
@@ -259,6 +294,7 @@ function renderResults(result) {
     </div>
     <div class="fairness">Trade fairness: ${result.trade_fairness_score}%</div>
     <p class="recommendation">${result.recommendation}</p>
+    ${worthComparisonHtml(result)}
   `;
   resultsSection.classList.remove("hidden");
 }
