@@ -236,6 +236,14 @@ def _team_breakdown(
             if expected_pct is not None:
                 detail["expected_cap_percentage"] = round(expected_pct, 2)
                 detail["expected_source"] = "espn" if player.espn_auction_value is not None else "estimated"
+                if salary_cap and market > 0:
+                    # Same ratio driving final_value, applied to the
+                    # expected price in real league dollars instead of
+                    # the inflated market-value scale - "what he's really
+                    # worth to you" in dollars you can directly compare
+                    # to what you paid.
+                    expected_dollars = expected_pct / 100 * salary_cap
+                    detail["league_dollar_value"] = round((final / market) * expected_dollars, 2)
         player_details.append(detail)
 
     return {

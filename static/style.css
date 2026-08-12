@@ -511,6 +511,13 @@ body {
   color: #8a6d1f;
 }
 
+.worth-to-you {
+  margin-top: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2f2f33;
+}
+
 .player-result-detail {
   margin-top: 4px;
   display: flex;

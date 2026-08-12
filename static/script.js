@@ -173,6 +173,10 @@ function formatMoney(value) {
   return value.toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
 
+function formatLeagueDollars(value) {
+  return value.toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 2 });
+}
+
 function playerRowHtml(p, showSalary) {
   const sourceLabel = p.value_source === "fantasycalc" ? "FantasyCalc" : "estimated";
   return `
@@ -182,6 +186,11 @@ function playerRowHtml(p, showSalary) {
         <span class="player-result-value">${formatMoney(p.market_value)}</span>
       </div>
       <span class="value-source-tag value-source-${p.value_source}">${sourceLabel}</span>
+      ${
+        p.league_dollar_value != null
+          ? `<div class="worth-to-you">Worth to you: ${formatLeagueDollars(p.league_dollar_value)}</div>`
+          : ""
+      }
       ${
         showSalary
           ? `<div class="player-result-detail">
