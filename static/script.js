@@ -232,17 +232,9 @@ function teamCardHtml(team, label, showSalary) {
         <h4>${label}</h4>
         <span class="value-share-badge">${team.value_share}%</span>
       </div>
-      <div class="team-total">
-        <span>Total market value</span><strong>${formatMoney(team.total_market_value)}</strong>
-      </div>
       ${
-        showSalary
-          ? `<div class="team-total"><span>Total final value</span><strong>${formatMoney(team.total_final_value)}</strong></div>`
-          : ""
-      }
-      ${
-        team.total_league_dollar_value != null
-          ? `<div class="team-total team-total-worth"><span>Total worth to you</span><strong>${formatLeagueDollars(team.total_league_dollar_value)}</strong></div>`
+        !showSalary
+          ? `<div class="team-total"><span>Total market value</span><strong>${formatMoney(team.total_market_value)}</strong></div>`
           : ""
       }
       <div class="player-results">
