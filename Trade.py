@@ -51,6 +51,10 @@ class Player:
     salary: Optional[float] = None
     position: Optional[str] = None
     sleeper_id: Optional[str] = None
+    # Real ESPN auction $ value (calibrated to a $200 budget) for this
+    # player's scoring format, resolved by app.py via name match. Used as
+    # the real "what should they cost" reference instead of an estimate.
+    espn_auction_value: Optional[float] = None
 
 
 def performance_score(player: Player, settings: LeagueSettings) -> float:
@@ -99,14 +103,26 @@ def market_value(
     return value
 
 
+# ESPN's published auction values are calibrated to this standard budget.
+ESPN_AUCTION_BUDGET = 200
+
+
 def expected_cap_percentage(
-    market_value_dollars: float, fc_values: Optional[Dict[str, float]]
+    player: Player,
+    market_value_dollars: float,
+    fc_values: Optional[Dict[str, float]],
 ) -> Optional[float]:
-    """What this player SHOULD cost, as % of cap, based on real relative
-    value among all of FantasyCalc's ranked players for these settings -
-    not a flat assumption. A player worth 2x the pool average is expected
-    to cost roughly 2x an average roster spot's share of the cap.
+    """What this player SHOULD cost, as % of cap.
+
+    Prefers a real, observed number: ESPN's actual auction $ value for this
+    player (calibrated to a $200 budget), converted straight to a %. Falls
+    back to an estimate derived from FantasyCalc's ranked pool when no ESPN
+    match exists - a player worth 2x the pool average is assumed to cost
+    roughly 2x an average roster spot's share of the cap.
     """
+    if player.espn_auction_value is not None:
+        return (player.espn_auction_value / ESPN_AUCTION_BUDGET) * 100
+
     if not fc_values:
         return None
     pool_size = len(fc_values)
@@ -134,7 +150,7 @@ def final_value(
 ) -> float:
     value = market_value(player, settings, fc_values)
     if cap_percentage is not None:
-        expected_pct = expected_cap_percentage(value, fc_values)
+        expected_pct = expected_cap_percentage(player, value, fc_values)
         if expected_pct is not None:
             # Ratio, not a point-difference: being paid 4x less than
             # expected should matter like being paid 4x less, not just a
@@ -216,9 +232,10 @@ def _team_breakdown(
             detail["cap_percentage"] = round(cap_pct, 2)
             if cap_pct > 0:
                 detail["value_per_cap_percent"] = round(market / cap_pct, 2)
-            expected_pct = expected_cap_percentage(market, fc_values)
+            expected_pct = expected_cap_percentage(player, market, fc_values)
             if expected_pct is not None:
                 detail["expected_cap_percentage"] = round(expected_pct, 2)
+                detail["expected_source"] = "espn" if player.espn_auction_value is not None else "estimated"
         player_details.append(detail)
 
     return {
