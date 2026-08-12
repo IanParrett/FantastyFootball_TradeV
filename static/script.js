@@ -187,6 +187,7 @@ function playerRowHtml(p, showSalary) {
           ? `<div class="player-result-detail">
               <span>Salary: ${formatMoney(p.salary ?? 0)}</span>
               ${p.cap_percentage != null ? `<span>${p.cap_percentage}% of cap</span>` : ""}
+              ${p.expected_cap_percentage != null ? `<span>expected ${p.expected_cap_percentage}%</span>` : ""}
               ${p.value_per_cap_percent != null ? `<span>${formatMoney(p.value_per_cap_percent)} / 1% cap</span>` : ""}
               <span>Final: ${formatMoney(p.final_value)}</span>
             </div>`

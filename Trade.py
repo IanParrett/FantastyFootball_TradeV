@@ -6,16 +6,11 @@ PEAK_AGE = 27
 DOLLAR_PER_PERFORMANCE_POINT = 200_000
 DOLLAR_PER_FANTASYCALC_POINT = 5_000
 
-# Cap commitments up to this threshold are discounted at the normal linear
-# rate - roughly what a solid starter costs in a typical league. Above it,
-# each additional point of cap is treated as accelerating opportunity cost
-# (crowding out the rest of the roster) and penalized at CAP_EXCESS_MULTIPLIER
-# times the normal rate. Modeled after real NFL surplus-value analysis
-# (Over The Cap: surplus = expected % of cap - actual % of cap, both same
-# unit) plus the standard economic principle that the cost of committing a
-# scarce, fixed budget accelerates as you approach its ceiling.
-CAP_DISCOUNT_THRESHOLD = 20.0
-CAP_EXCESS_MULTIPLIER = 2.0
+# Must match fantasycalc.NUM_TEAMS - used to translate FantasyCalc's ranked
+# player pool into an assumed roster size (pool size / number of teams),
+# so "expected cap %" can be derived from real relative-value data instead
+# of a made-up flat assumption.
+ASSUMED_LEAGUE_TEAMS = 12
 
 # Points per unit for standard fantasy scoring, keyed by the friendly stat
 # labels sleeper.py assigns. "Receptions" is handled separately since its
@@ -104,13 +99,31 @@ def market_value(
     return value
 
 
-def cap_discount_fraction(cap_percentage: float) -> float:
-    if cap_percentage <= CAP_DISCOUNT_THRESHOLD:
-        discount = cap_percentage
-    else:
-        excess = cap_percentage - CAP_DISCOUNT_THRESHOLD
-        discount = CAP_DISCOUNT_THRESHOLD + excess * CAP_EXCESS_MULTIPLIER
-    return min(discount / 100, 1.0)
+def expected_cap_percentage(
+    market_value_dollars: float, fc_values: Optional[Dict[str, float]]
+) -> Optional[float]:
+    """What this player SHOULD cost, as % of cap, based on real relative
+    value among all of FantasyCalc's ranked players for these settings -
+    not a flat assumption. A player worth 2x the pool average is expected
+    to cost roughly 2x an average roster spot's share of the cap.
+    """
+    if not fc_values:
+        return None
+    pool_size = len(fc_values)
+    pool_mean_dollars = (sum(fc_values.values()) / pool_size) * DOLLAR_PER_FANTASYCALC_POINT
+    if pool_mean_dollars <= 0:
+        return None
+    roster_size = pool_size / ASSUMED_LEAGUE_TEAMS
+    average_roster_spot_share = 100 / roster_size
+    return (market_value_dollars / pool_mean_dollars) * average_roster_spot_share
+
+
+# How far the expected/actual cap-share ratio can push a player's value up
+# or down. Bounded so an extreme discount can't inflate a player's trade
+# value beyond what their actual production could ever justify, and an
+# extreme overpay can't be treated as worthless outright.
+CAP_VALUE_MULTIPLIER_MIN = 1 / 3
+CAP_VALUE_MULTIPLIER_MAX = 3.0
 
 
 def final_value(
@@ -121,10 +134,17 @@ def final_value(
 ) -> float:
     value = market_value(player, settings, fc_values)
     if cap_percentage is not None:
-        # A player eating a bigger slice of the cap surrenders that much
-        # of their market value back as trade cost - and it accelerates
-        # past CAP_DISCOUNT_THRESHOLD (see constant above).
-        return value * (1 - cap_discount_fraction(cap_percentage))
+        expected_pct = expected_cap_percentage(value, fc_values)
+        if expected_pct is not None:
+            # Ratio, not a point-difference: being paid 4x less than
+            # expected should matter like being paid 4x less, not just a
+            # few points different. Clamped so it stays bounded either way.
+            ratio = expected_pct / cap_percentage if cap_percentage > 0 else CAP_VALUE_MULTIPLIER_MAX
+            ratio = max(CAP_VALUE_MULTIPLIER_MIN, min(ratio, CAP_VALUE_MULTIPLIER_MAX))
+            return value * ratio
+        # No FantasyCalc pool available (API unreachable) - fall back to a
+        # simple flat discount so the app still produces a sane number.
+        return value * (1 - cap_percentage / 100)
     if player.salary is not None:
         return value - player.salary
     return value
@@ -196,6 +216,9 @@ def _team_breakdown(
             detail["cap_percentage"] = round(cap_pct, 2)
             if cap_pct > 0:
                 detail["value_per_cap_percent"] = round(market / cap_pct, 2)
+            expected_pct = expected_cap_percentage(market, fc_values)
+            if expected_pct is not None:
+                detail["expected_cap_percentage"] = round(expected_pct, 2)
         player_details.append(detail)
 
     return {
