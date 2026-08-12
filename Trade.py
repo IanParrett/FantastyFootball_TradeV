@@ -246,6 +246,7 @@ def _team_breakdown(
                     # to what you paid.
                     expected_dollars = expected_pct / 100 * salary_cap
                     league_dollar_value = (final / market) * expected_dollars
+                    detail["auction_price"] = round(expected_dollars, 2)
                     detail["league_dollar_value"] = round(league_dollar_value, 2)
                     total_league_dollars += league_dollar_value
                     has_league_dollars = True

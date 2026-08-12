@@ -188,19 +188,34 @@ function playerRowHtml(p, showSalary) {
       <span class="value-source-tag value-source-${p.value_source}">${sourceLabel}</span>
       ${
         p.league_dollar_value != null
-          ? `<div class="worth-to-you">Worth to you: ${formatLeagueDollars(p.league_dollar_value)}</div>`
+          ? `<div class="worth-compare-block">
+              ${
+                p.auction_price != null
+                  ? `<div class="worth-compare-row">
+                      <span>Auction Price${p.expected_source === "espn" ? " (ESPN)" : ""}</span>
+                      <strong>${formatLeagueDollars(p.auction_price)}</strong>
+                    </div>`
+                  : ""
+              }
+              ${
+                p.salary != null
+                  ? `<div class="worth-compare-row">
+                      <span>League Salary</span>
+                      <strong>${formatLeagueDollars(p.salary)}</strong>
+                    </div>`
+                  : ""
+              }
+              <div class="worth-compare-row worth-compare-highlight">
+                <span>Worth to You</span>
+                <strong>${formatLeagueDollars(p.league_dollar_value)}</strong>
+              </div>
+            </div>`
           : ""
       }
       ${
         showSalary
           ? `<div class="player-result-detail">
-              <span>Salary: ${formatMoney(p.salary ?? 0)}</span>
               ${p.cap_percentage != null ? `<span>${p.cap_percentage}% of cap</span>` : ""}
-              ${
-                p.expected_cap_percentage != null
-                  ? `<span>expected ${p.expected_cap_percentage}%${p.expected_source === "espn" ? " (ESPN)" : ""}</span>`
-                  : ""
-              }
               ${p.value_per_cap_percent != null ? `<span>${formatMoney(p.value_per_cap_percent)} / 1% cap</span>` : ""}
               <span>Final: ${formatMoney(p.final_value)}</span>
             </div>`

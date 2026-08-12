@@ -511,11 +511,38 @@ body {
   color: #8a6d1f;
 }
 
-.worth-to-you {
-  margin-top: 8px;
+.worth-compare-block {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed #ddd;
+}
+
+.worth-compare-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #666;
+  padding: 2px 0;
+}
+
+.worth-compare-row strong {
+  color: #333;
+  font-weight: 600;
+}
+
+.worth-compare-highlight {
+  margin-top: 4px;
   font-size: 1rem;
-  font-weight: 700;
+}
+
+.worth-compare-highlight span {
   color: #2f2f33;
+  font-weight: 700;
+}
+
+.worth-compare-highlight strong {
+  color: #f5821f;
+  font-weight: 700;
 }
 
 .player-result-detail {
