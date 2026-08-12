@@ -282,3 +282,64 @@ form.addEventListener("submit", async (event) => {
     resultsSection.classList.remove("hidden");
   }
 });
+
+const toggleAuctionValuesBtn = document.getElementById("toggle-auction-values");
+const auctionValuesPanel = document.getElementById("auction-values-panel");
+const auctionValuesBody = document.getElementById("auction-values-body");
+const positionTabs = document.querySelectorAll(".position-tab");
+let currentAuctionPosition = "ALL";
+let auctionValuesLoaded = false;
+
+async function loadAuctionValues() {
+  auctionValuesBody.innerHTML = `<tr><td colspan="5">Loading...</td></tr>`;
+  const scoring = document.querySelector('input[name="scoring-format"]:checked').value;
+  const response = await fetch(
+    `/api/auction-values?scoring_format=${scoring}&position=${currentAuctionPosition}`
+  );
+  const players = response.ok ? await response.json() : [];
+
+  if (players.length === 0) {
+    auctionValuesBody.innerHTML = `<tr><td colspan="5">No data available.</td></tr>`;
+    return;
+  }
+
+  auctionValuesBody.innerHTML = players
+    .map(
+      (p) => `
+        <tr>
+          <td>${p.rank}</td>
+          <td>${p.name}</td>
+          <td>${p.position}</td>
+          <td>${p.team}</td>
+          <td>${formatMoney(p.value)}</td>
+        </tr>
+      `
+    )
+    .join("");
+}
+
+toggleAuctionValuesBtn.addEventListener("click", () => {
+  const isHidden = auctionValuesPanel.classList.toggle("hidden");
+  toggleAuctionValuesBtn.textContent = isHidden ? "Show Auction Values" : "Hide Auction Values";
+  if (!isHidden && !auctionValuesLoaded) {
+    auctionValuesLoaded = true;
+    loadAuctionValues();
+  }
+});
+
+positionTabs.forEach((tab) => {
+  tab.addEventListener("click", () => {
+    positionTabs.forEach((t) => t.classList.remove("active"));
+    tab.classList.add("active");
+    currentAuctionPosition = tab.dataset.position;
+    loadAuctionValues();
+  });
+});
+
+document.querySelectorAll('input[name="scoring-format"]').forEach((input) => {
+  input.addEventListener("change", () => {
+    if (!auctionValuesPanel.classList.contains("hidden")) {
+      loadAuctionValues();
+    }
+  });
+});

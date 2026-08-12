@@ -53,6 +53,36 @@
       </label>
     </div>
 
+    <div class="auction-values-section">
+      <button type="button" id="toggle-auction-values" class="toggle-auction-values-btn">
+        Show Auction Values
+      </button>
+      <div id="auction-values-panel" class="auction-values-panel hidden">
+        <div class="auction-position-tabs">
+          <button type="button" class="position-tab active" data-position="ALL">All</button>
+          <button type="button" class="position-tab" data-position="QB">QB</button>
+          <button type="button" class="position-tab" data-position="RB">RB</button>
+          <button type="button" class="position-tab" data-position="WR">WR</button>
+          <button type="button" class="position-tab" data-position="TE">TE</button>
+          <button type="button" class="position-tab" data-position="K">K</button>
+        </div>
+        <div class="auction-values-table-wrap">
+          <table class="auction-values-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Player</th>
+                <th>Pos</th>
+                <th>Team</th>
+                <th>Auction Value</th>
+              </tr>
+            </thead>
+            <tbody id="auction-values-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <form id="trade-form" class="split-container">
       <div class="panel panel-dark" data-side="team_a">
         <h2 class="panel-heading">Team One</h2>

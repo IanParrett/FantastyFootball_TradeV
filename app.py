@@ -76,6 +76,16 @@ def api_compare():
     return jsonify(Trade.compare_trade(team_a, team_b, settings, fc_values, salary_cap))
 
 
+@app.route("/api/auction-values")
+def api_auction_values():
+    scoring = request.args.get("scoring_format", "half_ppr")
+    position = request.args.get("position", "ALL")
+    try:
+        return jsonify(espn.get_ranked_players(scoring, position))
+    except Exception:
+        return jsonify([])
+
+
 @app.route("/api/players/search")
 def api_players_search():
     query = request.args.get("q", "")
